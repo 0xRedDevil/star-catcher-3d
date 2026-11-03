@@ -168,6 +168,7 @@ The last mode played is remembered, so a retry is one tap.
 - When an unlock happens mid-run, a "NEW BOARD UNLOCKED!" banner appears with sparkles and the run continues.
 - The start screen shows all four boards. Locked ones show a padlock and the score needed. Tapping an unlocked board selects it, and the choice is remembered.
 - Boards are cosmetic only.
+- **Decided by the owner:** the unlocked boards must look *epic*, clearly more special than the starter board, with each tier more spectacular than the last. Every unlocked board has something moving: for example a shimmering animated surface, a glowing aura, its own sparkle trail and, at the top tier, little stars orbiting the board and a rainbow glitter trail. A board's first ride after unlocking it deserves a little celebration.
 
 ### Screens and flow
 
