@@ -156,6 +156,89 @@ test('drifting clouds never pass through their neighbours', () => {
     assert.ok(checked > 20, 'should have busy rows with clouds to check');
 });
 
+// A rider who sits in one lane: tell the placer where they are as they ride
+function campingRide(seed, campX, mode = EASY) {
+    const track = createTrack({ seed, difficulty: () => 1 });
+    const placer = createPlacer({ seed, track, mode });
+    const all = [];
+    for (let s = 0; s <= 6000; s += 1) {
+        placer.noteRider(s, campX);
+        all.push(...placer.fill(s + 150, s / 11));
+    }
+    return all;
+}
+
+// Longest stretch (after the start) with nothing at all in the rider's lane
+function longestClear(all, x, from = 300) {
+    const threats = all
+        .filter(p => p.type === 'obstacle' || p.type === 'planet')
+        .filter(p => {
+            const [lo, hi] = p.range || [p.x, p.x];
+            const nearest = Math.max(lo, Math.min(hi, x));
+            return Math.abs(nearest - x) < p.radius * 0.9 + 0.35;
+        })
+        .map(p => p.s)
+        .filter(s => s >= from && s <= 6000)
+        .sort((a, b) => a - b);
+    let longest = 0;
+    let prev = from;
+    for (const s of threats) {
+        longest = Math.max(longest, s - prev);
+        prev = s;
+    }
+    return longest;
+}
+
+test('a rider camping in one lane gets nudged', () => {
+    for (const x of [-5.3, -2, 0, 3, 5.3]) {
+        for (const seed of [61, 62]) {
+            const gap = longestClear(campingRide(seed, x), x);
+            assert.ok(gap <= 170, `camping at x=${x} (seed ${seed}) stayed clear for ${gap.toFixed(0)} units`);
+        }
+    }
+});
+
+test('nudges never block the safe lane', () => {
+    for (const x of [-5.3, 0, 5.3]) {
+        for (const p of obstacles(campingRide(63, x))) {
+            assert.ok(Math.abs(p.x - p.safeX) >= p.radius + 1.3 - EPS, `obstacle at s=${p.s} too close to the safe lane`);
+        }
+    }
+});
+
+test('following the safe lane never meets a nudge', () => {
+    // The rider glides from each row's safe lane to the next, and reports where it is
+    const track = createTrack({ seed: 64, difficulty: () => 1 });
+    const placer = createPlacer({ seed: 64, track, mode: EASY });
+    const lanes = new Map(); // row s -> safeX
+    const all = [];
+    const laneAt = (s) => {
+        const rows = [...lanes.keys()].sort((a, b) => a - b);
+        let before = null;
+        let after = null;
+        for (const r of rows) {
+            if (r <= s) before = r;
+            else { after = r; break; }
+        }
+        if (before === null) return after === null ? 0 : lanes.get(after);
+        if (after === null) return lanes.get(before);
+        const t = (s - before) / (after - before);
+        return lanes.get(before) + (lanes.get(after) - lanes.get(before)) * t;
+    };
+    for (let s = 0; s <= 4000; s += 1) {
+        for (const p of placer.fill(s + 150, s / 11)) {
+            all.push(p);
+            if (p.type === 'obstacle' || p.type === 'star' || p.type === 'heart') lanes.set(p.s - (p.type === 'star' ? 0 : 0), p.safeX);
+        }
+        placer.noteRider(s, laneAt(s));
+    }
+    // Static obstacles only (drifters are checked by their own tests): none sits on the rider's path
+    for (const p of obstacles(all).filter(q => !q.range)) {
+        const x = laneAt(p.s);
+        assert.ok(Math.abs(p.x - x) >= p.radius + 0.35 - EPS, `${p.kind} at s=${p.s} is in the way of a rider following the safe lane`);
+    }
+});
+
 test('rows get closer and fuller the longer you ride', () => {
     const stats = (elapsed) => {
         const { all } = ride(14, EASY, () => elapsed);

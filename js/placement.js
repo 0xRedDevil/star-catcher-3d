@@ -57,6 +57,12 @@ const PICKUP_RADIUS = 0.8;
 const EDGE = TRACK_HALF_WIDTH - 0.1;
 const TRIES = 8;
 const CLOUD_DRIFT = 1.5;   // storm clouds drift up to this far either side of where they start
+// No camping: a rider who stays within CAMP_WIDTH of one spot for CAMP_DISTANCE units
+// gets an obstacle placed in their lane (never in the safe lane), at most every NUDGE_GAP units
+const CAMP_WIDTH = 1.0;
+const CAMP_DISTANCE = 80;
+const NUDGE_GAP = 40;
+const NUDGE_KINDS = ['rock', 'buddy', 'cluster', 'tall', 'station'];
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -67,13 +73,27 @@ function gapTo(p, x) {
 }
 
 export function createPlacer({ seed, track, mode = EASY }) {
-    if (mode.free) return { fill: () => [] };
+    if (mode.free) return { fill: () => [], noteRider: () => {} };
 
     const rng = createRng((seed ^ 0x5bd1e995) >>> 0);
     const rand = (a, b) => a + rng() * (b - a);
     let nextS = FIRST_ROW;
     let row = 0;
     let safeX = 0;
+
+    // Where the rider has been sitting, to spot camping
+    let campAnchor = null;
+    let campSince = 0;
+    let campX = null;        // set while the rider is camping
+    let lastNudgeS = -Infinity;
+
+    function noteRider(s, x) {
+        if (campAnchor === null || Math.abs(x - campAnchor) > CAMP_WIDTH) {
+            campAnchor = x;
+            campSince = s;
+        }
+        campX = s - campSince >= CAMP_DISTANCE ? x : null;
+    }
 
     // Something just over a hilltop can't be seen coming, so keep that stretch clear
     function hiddenByCrest(s) {
@@ -85,7 +105,10 @@ export function createPlacer({ seed, track, mode = EASY }) {
 
     function placeRow(s, elapsed) {
         const out = [];
-        safeX = clamp(safeX + rand(-SAFE_STEP, SAFE_STEP), -RIDER_LIMIT + 1, RIDER_LIMIT - 1);
+        let step = rand(-SAFE_STEP, SAFE_STEP);
+        // Camping on the safe lane itself: the lane drifts away, so following it means moving
+        if (campX !== null && Math.abs(campX - safeX) < 2.6) step = -Math.sign(campX - safeX || 1) * rand(0.6, SAFE_STEP);
+        safeX = clamp(safeX + step, -RIDER_LIMIT + 1, RIDER_LIMIT - 1);
         const tag = { row, safeX };
 
         // Stars and hearts wait in the safe lane
@@ -129,6 +152,27 @@ export function createPlacer({ seed, track, mode = EASY }) {
                     break;
                 }
             }
+
+            // No camping: put something in the camper's lane, unless something is already there
+            if (campX !== null && s - lastNudgeS >= NUDGE_GAP) {
+                const reaches = (p) => gapTo(p, campX) < p.radius * 0.9 + 0.35;
+                const kind = NUDGE_KINDS[Math.floor(rng() * NUDGE_KINDS.length)];
+                const radius = KIND_RADIUS[kind];
+                const x = clamp(campX, -(EDGE - radius), EDGE - radius);
+                if (placed.some(reaches)) {
+                    lastNudgeS = s;
+                } else if (Math.abs(x - safeX) >= radius + SAFE_CLEAR) {
+                    // Make room by moving out anything it would overlap
+                    for (const p of placed.filter(q => gapTo(q, x) < q.radius + radius + SPACING)) {
+                        placed.splice(placed.indexOf(p), 1);
+                        out.splice(out.indexOf(p), 1);
+                    }
+                    const nudge = { type: 'obstacle', kind, s, x, radius, nudge: true, ...tag };
+                    placed.push(nudge);
+                    out.push(nudge);
+                    lastNudgeS = s;
+                }
+            }
         }
 
         // Rolling planets sit between rows, on the roomier side of the safe lane.
@@ -161,5 +205,5 @@ export function createPlacer({ seed, track, mode = EASY }) {
         return out;
     }
 
-    return { fill };
+    return { fill, noteRider };
 }

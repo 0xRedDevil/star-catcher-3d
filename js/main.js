@@ -710,6 +710,7 @@ function frame() {
     ride = advanceRide(ride, base, track.frameAt(ride.s).slope, dt);
     track.pruneBefore(ride.s - 60);
     trackView.update(ride.s);
+    if (gameState === 'PLAYING') placer.noteRider(ride.s, x); // spots riders camping in one lane
     placer.fill(ride.s + PLACE_AHEAD, elapsed).forEach(spawn);
     if (gameState === 'PLAYING' && !freeRide) {
         scoring.addDistance(ride.s - prevS);
