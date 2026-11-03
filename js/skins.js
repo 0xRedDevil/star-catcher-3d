@@ -4,10 +4,24 @@ import * as THREE from 'three';
 import { KIND_RADIUS } from './placement.js';
 import {
     makeCrystalPine, makeToadstool, makeMoonRock, makeSnowman, makeFairyHouse, makeStormCloud,
-    makeRollingPlanet, makeGlow, propMat, boltGeo, boltMat, pick, rand
+    makeRollingPlanet, makeGlow, propMat, boltGeo, boltMat, pick, rand, widthOf
 } from './models.js';
+import { makeUfo, makeAlien, makeRocket, makeSatellite, makeSpaceCrystals, makeCraterRock } from './spaceModels.js';
 
 export const SKINS = {
+    space: {
+        id: 'space',
+        name: 'Space Friends',
+        obstacles: {
+            tall: makeRocket,
+            cluster: makeSpaceCrystals,
+            rock: makeCraterRock,
+            buddy: makeAlien,
+            station: makeSatellite,
+            floater: makeUfo,
+            planet: makeRollingPlanet,
+        },
+    },
     forest: {
         id: 'forest',
         name: 'Fairy Forest',
@@ -22,7 +36,7 @@ export const SKINS = {
         },
     },
 };
-export const DEFAULT_SKIN = 'forest';
+export const DEFAULT_SKIN = 'space';
 
 // Each model maker returns { geo, radius } and, optionally:
 //   faceCamera: true        it faces the rider
@@ -37,7 +51,9 @@ export function obstacleModel(role, skinId = DEFAULT_SKIN) {
     const key = `${skinId}:${role}`;
     variants[key] ??= Array.from({ length: 5 }, SKINS[skinId].obstacles[role]);
     const variant = pick(variants[key]);
-    const scale = Math.min(KIND_RADIUS[role] / variant.radius, 1.2) * rand(0.85, 1);
+    // Size by the model's real, measured width, so what you see is what you can bump into
+    variant.width ??= widthOf(variant.geo);
+    const scale = Math.min(KIND_RADIUS[role] / variant.width, 1.2) * rand(0.85, 1);
 
     const object = new THREE.Group();
     const model = new THREE.Group();   // the game turns this to face a random way
@@ -71,5 +87,5 @@ export function obstacleModel(role, skinId = DEFAULT_SKIN) {
     };
     object.userData.faceRider = !!variant.faceCamera;
     object.userData.model = model;
-    return { object, radius: variant.radius * scale };
+    return { object, radius: variant.width * scale };
 }

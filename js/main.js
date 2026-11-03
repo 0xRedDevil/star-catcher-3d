@@ -592,6 +592,7 @@ function updateItems(dt, prevS) {
         const bob = p.kind === 'floater' ? Math.sin(time * 2 + it.phase) * 0.12 : 0;
         trackPoint(it.obj.position, f, it.x, it.height + bob);
         orient(it.obj, f);
+        if (it.obj.userData.update) it.obj.userData.update(time); // blinking lights, spinning, bobbing
         if (p.type === 'star' || p.type === 'heart') {
             it.obj.userData.model.rotation.y += dt * 2.5;
             it.obj.position.addScaledVector(_u.set(f.ux, f.uy, f.uz), Math.sin(time * 3 + it.phase) * 0.08);

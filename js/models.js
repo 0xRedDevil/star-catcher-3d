@@ -71,6 +71,14 @@ export function part(geo, color, { x = 0, y = 0, z = 0, sx = 1, sy = sx, sz = sx
     return g;
 }
 
+// How far a model reaches sideways from its centre: its real footprint on the track
+export function widthOf(geo) {
+    const pos = geo.attributes.position;
+    let widest = 0;
+    for (let i = 0; i < pos.count; i++) widest = Math.max(widest, Math.hypot(pos.getX(i), pos.getZ(i)));
+    return widest;
+}
+
 export function bake(parts) {
     const g = mergeGeometries(parts);
     parts.forEach(p => p.dispose());
