@@ -1,6 +1,6 @@
 # Star Catcher 3D 🧚✨
 
-Ride a rainbow board along an endless glass sky track that climbs, dips and swoops through space. Dodge moon rocks, toadstools, snowmen, crystal trees, fairy houses, storm clouds and rolling planets, and catch stars to build your combo. The 3D follow-up to [Fairy Star Catcher](https://github.com/0xRedDevil/fairy-star-catcher).
+Ride a magic board along an endless glass sky track that climbs, dips and swoops through space. Dodge little UFOs, aliens, rockets, satellites, space crystals, moon rocks and rolling planets, and catch stars to build your combo. The 3D follow-up to [Fairy Star Catcher](https://github.com/0xRedDevil/fairy-star-catcher).
 
 Play it at https://0xreddevil.github.io/star-catcher-3d/
 
@@ -37,7 +37,11 @@ Score enough in a single ride, in either mode, to unlock a new board, and pick i
 | Galaxy | 5,000 | twinkling starfield, glowing cyan edge, star-dust trail |
 | Super Rainbow | 10,000 | sliding rainbow stripes, orbiting gold stars, rainbow glitter trail |
 
-Storm clouds drift side to side, so time your dodge, but there is always a clear way through.
+UFOs drift side to side, so time your dodge, but there is always a clear way through.
+
+### Skins
+
+The obstacles come as a swappable skin. **Space Friends** is the default. **Fairy Forest** (crystal trees, toadstools, snowmen, fairy houses and storm clouds) is kept ready for a future skin picker, and a Christmas skin is planned.
 
 ## Controls
 
