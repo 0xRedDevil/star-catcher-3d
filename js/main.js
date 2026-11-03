@@ -9,8 +9,9 @@ import { useDistanceFog, FOG_NEAR, FOG_FAR } from './fog.js';
 import { sweptCheck, planetX } from './collision.js';
 import { createLives } from './lives.js';
 import {
-    starGeo, starMat, heartGeo, heartMat, glowTex, makeGlow, createBoard, createWand, obstacleModel, rand, pick
+    starGeo, starMat, heartGeo, heartMat, glowTex, makeGlow, createWand, obstacleModel, rand, pick
 } from './models.js';
+import { createBoardModel } from './boardModels.js';
 import { createSky } from './sky.js';
 
 // Tuning
@@ -65,7 +66,8 @@ const rider = new THREE.Group();
 scene.add(rider);
 const leanPivot = new THREE.Group();
 rider.add(leanPivot);
-leanPivot.add(createBoard());
+let boardModel = createBoardModel('starter');
+leanPivot.add(boardModel.group);
 
 const wand = createWand();
 camera.add(wand.group);
@@ -608,6 +610,7 @@ function frame() {
     lean += (clamp(-vx * 0.05, -0.4, 0.4) - lean) * Math.min(1, dt * 8);
     leanPivot.rotation.z = lean + Math.sign(x) * wall.lean;
     leanPivot.position.y = Math.sin(time * 4) * 0.02;
+    boardModel.update(dt, time);
     // Blink while safe after a bump
     leanPivot.visible = gameState === 'PLAYING' && lives.isSafe() ? Math.floor(time * 12) % 2 === 0 : true;
 
