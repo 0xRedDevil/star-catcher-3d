@@ -1,7 +1,9 @@
 // The four boards. Each unlocked board has something moving, and each tier is more
 // spectacular than the last. Boards point their nose down -z with their top facing +y.
 import * as THREE from 'three';
-import { makeGlow, starGeo, starMat } from './models.js';
+import { makeGlow, starGeo, starMat, glowTex } from './models.js';
+
+const SHARED = new Set([starGeo, starMat, glowTex]); // used by other things too, so never freed here
 
 export const BOARD_W = 0.8;
 export const BOARD_L = 2.2;
@@ -217,9 +219,28 @@ export function createBoardModel(id) {
     }
     update(0, 0);
 
+    // Free this board's graphics memory when it's swapped for another
+    function dispose() {
+        const freed = new Set();
+        const free = (thing) => {
+            if (thing && !SHARED.has(thing) && !freed.has(thing)) {
+                freed.add(thing);
+                thing.dispose();
+            }
+        };
+        group.traverse(obj => {
+            free(obj.geometry);
+            if (obj.material) {
+                free(obj.material.map);
+                free(obj.material);
+            }
+        });
+    }
+
     return {
         group,
         update,
+        dispose,
         trailColors: look.trailColors.map(c => new THREE.Color(c)),
         trailRate: look.trailRate,
         auraColor: look.aura.color,

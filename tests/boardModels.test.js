@@ -39,6 +39,27 @@ test('the super rainbow board has orbiting stars', () => {
     stars.forEach((s, i) => assert.ok(s.position.distanceTo(before[i]) > 0.01, `star ${i} should move`));
 });
 
+test('disposing a board frees its own pieces but not the shared ones', async () => {
+    const { starGeo, starMat, glowTex } = await import('../js/models.js');
+    const shared = new Set([starGeo, starMat, glowTex]);
+    const board = createBoardModel('rainbow');
+    const own = new Set();
+    board.group.traverse(obj => {
+        if (obj.geometry) own.add(obj.geometry);
+        if (obj.material) {
+            own.add(obj.material);
+            if (obj.material.map) own.add(obj.material.map);
+        }
+    });
+    const freed = new Set();
+    for (const thing of own) thing.addEventListener('dispose', () => freed.add(thing));
+    board.dispose();
+    for (const thing of own) {
+        if (shared.has(thing)) assert.ok(!freed.has(thing), 'shared star and glow pieces must stay');
+        else assert.ok(freed.has(thing), `${thing.type} was not freed`);
+    }
+});
+
 test('unlocked boards have something moving', () => {
     for (const id of ['candy', 'galaxy', 'rainbow']) {
         const board = createBoardModel(id);

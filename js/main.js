@@ -73,8 +73,14 @@ const leanPivot = new THREE.Group();
 rider.add(leanPivot);
 let boardModel = null;
 
+let boardId = null;
 function useBoard(id) {
-    if (boardModel) leanPivot.remove(boardModel.group);
+    if (id === boardId) return; // tapping the board you already have changes nothing
+    if (boardModel) {
+        leanPivot.remove(boardModel.group);
+        boardModel.dispose();
+    }
+    boardId = id;
     boardModel = createBoardModel(id);
     leanPivot.add(boardModel.group);
 }
@@ -128,11 +134,16 @@ const trailPoints = new THREE.Points(trailGeo, new THREE.PointsMaterial({
 trailPoints.frustumCulled = false;
 scene.add(trailPoints);
 let trailNext = 0;
+let trailOwed = 0;   // sparkles due but not yet made, so the trail is the same on fast and slow screens
 const _emit = new THREE.Vector3();
 
 function updateTrail(dt, emitting) {
     if (emitting) {
-        for (let n = 0; n < boardModel.trailRate; n++) {
+        // trailRate is sparkles per 1/60 s
+        trailOwed += boardModel.trailRate * 60 * dt;
+        const count = Math.floor(trailOwed);
+        trailOwed -= count;
+        for (let n = 0; n < count; n++) {
             const i = trailNext;
             trailNext = (trailNext + 1) % TRAIL_COUNT;
             const side = Math.random() < 0.5 ? -1 : 1;
