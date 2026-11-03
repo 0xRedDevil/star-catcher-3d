@@ -1,6 +1,9 @@
 // Everything the game remembers between rides: top 5s and bests per mode, unlocked boards,
 // the chosen board and the last mode. If the browser blocks saving, it still all works
 // for the current visit. Pure, no Three.js.
+import { BOARDS } from './boards.js';
+
+const BOARD_IDS = BOARDS.map(b => b.id); // anything else in saved data is ignored
 
 export const LEGACY_KEY = 'star_catcher_3d_leaderboard';   // the first version's top 5
 const KEYS = {
@@ -80,7 +83,7 @@ export function createStore(backing = defaultBacking()) {
     const savedUnlocks = parseJson(read(KEYS.unlocked));
     const unlockedIds = ['starter'];
     if (Array.isArray(savedUnlocks)) {
-        for (const id of savedUnlocks) if (typeof id === 'string' && !unlockedIds.includes(id)) unlockedIds.push(id);
+        for (const id of savedUnlocks) if (BOARD_IDS.includes(id) && !unlockedIds.includes(id)) unlockedIds.push(id);
     }
     const savedCelebrations = parseJson(read(KEYS.celebrated));
     const celebratedIds = Array.isArray(savedCelebrations) ? savedCelebrations.filter(id => typeof id === 'string') : [];
@@ -110,7 +113,7 @@ export function createStore(backing = defaultBacking()) {
 
         // Saved straight away, so an unlock survives closing the tab mid-ride
         unlock(ids) {
-            const fresh = ids.filter(id => !unlockedIds.includes(id));
+            const fresh = ids.filter(id => BOARD_IDS.includes(id) && !unlockedIds.includes(id));
             if (fresh.length) {
                 unlockedIds.push(...fresh);
                 write(KEYS.unlocked, JSON.stringify(unlockedIds));

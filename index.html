@@ -238,6 +238,21 @@
                 padding: 4px 10px;
                 gap: 4px;
             }
+            #banner-title {
+                font-size: 1.15rem;
+            }
+            #zone-toast {
+                font-size: 1.3rem;
+            }
+        }
+        /* Short landscape phones: keep the banner and zone name apart */
+        @media (max-height: 480px) {
+            #banner {
+                top: 12%;
+            }
+            #zone-toast {
+                top: 45%;
+            }
         }
         /* Tall menus scroll from the top on small screens instead of being cut off */
         .ui-screen {
@@ -357,7 +372,9 @@
             opacity: 0;
             transition: opacity 0.3s, transform 0.3s;
             text-align: center;
-            white-space: nowrap;
+            /* Long banners wrap instead of being cut off on phones */
+            width: max-content;
+            max-width: calc(100vw - 32px);
         }
         #zone-toast {
             top: 28%;
@@ -435,6 +452,7 @@
             <p>You scored <span id="final-score" style="color: #ffd700; font-weight: bold;">0</span> points!<br>
                 Best combo: <span id="best-combo" style="color: #ffd700; font-weight: bold;">x1</span><br>
                 You reached <span id="zone-reached" style="color: #fff3c4; font-weight: bold;">Starlight Sea</span>!</p>
+            <p id="gameover-unlocks" class="hidden" style="color: #ffd700; font-weight: bold;"></p>
 
             <div id="new-high-score-section" class="input-group hidden">
                 <p style="color: #00ffff; margin-bottom: 8px;">🎉 New Top 5 Score! Enter Your Name:</p>

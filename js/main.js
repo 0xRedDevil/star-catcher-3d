@@ -258,6 +258,7 @@ function playSound(type) {
 // Banners and toasts, one at a time
 const bannerQueue = [];
 let bannerBusy = false;
+let bannerTimer = null;
 function showBanner(title, subtitle = '') {
     bannerQueue.push({ title, subtitle });
     if (!bannerBusy) nextBanner();
@@ -274,13 +275,17 @@ function nextBanner() {
     $('banner-title').innerText = next.title;
     $('banner-subtitle').innerText = next.subtitle;
     el.classList.add('show');
-    setTimeout(() => {
+    bannerTimer = setTimeout(() => {
         el.classList.remove('show');
-        setTimeout(nextBanner, 300);
+        bannerTimer = setTimeout(nextBanner, 300);
     }, BANNER_TIME);
 }
+// Stop everything, including the banner showing now, so nothing carries into the next screen
 function clearBanners() {
     bannerQueue.length = 0;
+    clearTimeout(bannerTimer);
+    bannerBusy = false;
+    $('banner').classList.remove('show');
 }
 
 let toastTimer = null;
@@ -341,6 +346,7 @@ let lives = createLives();
 let shownScore = -1;
 let previousBest = 0;
 let newBestShown = false;
+let unlockedThisRide = [];
 let zoneIndex = 0;
 let items = [];
 
@@ -416,6 +422,7 @@ function updateHud() {
     // Unlocks are saved straight away, so they survive closing the tab
     for (const id of store.unlock(unlocksFor(scoring.score))) {
         const board = BOARDS.find(b => b.id === id);
+        unlockedThisRide.push(board.name);
         showBanner('NEW BOARD UNLOCKED! ✨', board.name);
         playSound('fanfare');
         burst(rider.position, 0xff99ff, 0.45, 30, 4);
@@ -487,6 +494,7 @@ function startGame(nextMode) {
     lives = createLives({ start: mode.lives, max: mode.maxLives });
     previousBest = freeRide ? 0 : store.best(modeId);
     newBestShown = false;
+    unlockedThisRide = [];
     newTrack(freeRide ? FREE_RIDE : mode.placement);
     ride.speed = speedAt(mode, 0);
 
@@ -528,6 +536,10 @@ function triggerGameOver() {
     $('final-score').innerText = scoring.score.toLocaleString();
     $('best-combo').innerText = 'x' + scoring.bestMultiplier;
     $('zone-reached').innerText = zoneAt(ride.s).name;
+    // Shown here too, in case the ride ended before the unlock banner had its turn
+    $('gameover-unlocks').innerText = unlockedThisRide.length
+        ? `✨ New board unlocked: ${unlockedThisRide.join(', ')}! Pick it on the menu.` : '';
+    $('gameover-unlocks').classList.toggle('hidden', !unlockedThisRide.length);
     $('gameover-lb-title').innerText = `🏆 ${MODES[modeId].label} Top 5`;
 
     $('new-high-score-section').classList.toggle('hidden', !store.qualifies(modeId, scoring.score));

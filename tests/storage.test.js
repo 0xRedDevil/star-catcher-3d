@@ -102,6 +102,14 @@ test('a board is celebrated only once', () => {
     assert.equal(createStore(backing).celebrated('galaxy'), false);
 });
 
+test('unknown board ids in saved data are ignored', () => {
+    const store = createStore(memoryBacking({ sc3d_unlocked: JSON.stringify(['candy', 'foo']), sc3d_board: 'foo' }));
+    assert.deepEqual(store.unlocked(), ['starter', 'candy']);
+    assert.equal(store.board(), 'starter');
+    assert.deepEqual(store.unlock(['foo']), []);
+    assert.equal(store.setBoard('foo'), false);
+});
+
 test('last mode is remembered', () => {
     const backing = memoryBacking();
     createStore(backing).setLastMode('hard');
