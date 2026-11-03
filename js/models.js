@@ -1,7 +1,6 @@
 // Shared models: glow sprites, low-poly model baking, obstacles, stars and hearts
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { KIND_RADIUS } from './placement.js';
 
 export const rand = (a, b) => a + Math.random() * (b - a);
 export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -190,14 +189,14 @@ export function makeFairyHouse() {
         part(G.box, 0xffe27a, { x: 0.3, y: 1.0, z: 0.6, sx: 0.22, sy: 0.22, sz: 0.1, ry: 0.4 }),
         part(G.box, 0xffe27a, { x: -0.3, y: 1.0, z: 0.6, sx: 0.22, sy: 0.22, sz: 0.1, ry: -0.4 }),
     ];
-    return { geo: bake(parts), radius: 0.85, faceCamera: true, windowGlow: true };
+    return { geo: bake(parts), radius: 0.85, faceCamera: true, glows: [{ color: 0xffd27a, size: 1.6, opacity: 0.6, pos: [0, 1.0, 0.7] }] };
 }
 
 export function makeStormCloud() {
     const parts = [];
     [[0, 0, 0, 0.6], [-0.55, -0.1, 0, 0.45], [0.55, -0.1, 0, 0.45], [-0.25, 0.28, -0.05, 0.42], [0.3, 0.25, 0, 0.4]]
         .forEach(([x, y, z, s]) => parts.push(part(lump(0.25), pick([0x5f6485, 0x6a6f8f, 0x575b7a]), { x, y, z, sx: s })));
-    return { geo: bake(parts), radius: 0.95 };
+    return { geo: bake(parts), radius: 0.95, bolt: true };
 }
 
 // A low-poly planet with coloured bands and, sometimes, a tilted ring
@@ -233,43 +232,6 @@ export function makeRollingPlanet() {
     // Sphere 0.45 plus a ring reaching about 0.64 keeps it inside its placement size
     const geo = makeBandedPlanet({ radius: 0.45, palette, ringColor: 0xfff3c4, ringTilt: rand(-0.4, 0.4) });
     return { geo, radius: 0.64 };
-}
-
-// One random, cached variant of each obstacle kind, scaled to fit its placement size
-const MAKERS = {
-    tall: makeCrystalPine,
-    cluster: makeToadstool,
-    rock: makeMoonRock,
-    buddy: makeSnowman,
-    station: makeFairyHouse,
-    floater: makeStormCloud,
-    planet: makeRollingPlanet,
-};
-const variants = {};
-
-export function obstacleModel(kind) {
-    variants[kind] ??= Array.from({ length: 5 }, MAKERS[kind]);
-    const variant = pick(variants[kind]);
-    const scale = Math.min(KIND_RADIUS[kind] / variant.radius, 1.2) * rand(0.85, 1);
-    const object = new THREE.Group();
-    const model = new THREE.Group();
-    model.scale.setScalar(scale);
-    model.add(new THREE.Mesh(variant.geo, propMat));
-    if (kind === 'floater') {
-        const bolt = new THREE.Mesh(boltGeo, boltMat);
-        bolt.position.set(0, -0.6, 0.2);
-        bolt.scale.setScalar(1.3);
-        model.add(bolt);
-    }
-    if (variant.windowGlow) {
-        const glow = makeGlow(0xffd27a, 1.6, 0.6);
-        glow.position.set(0, 1.0, 0.7);
-        model.add(glow);
-    }
-    object.add(model);
-    object.userData.faceRider = !!variant.faceCamera;
-    object.userData.model = model;
-    return { object, radius: variant.radius * scale };
 }
 
 // Stars, hearts and lightning bolts

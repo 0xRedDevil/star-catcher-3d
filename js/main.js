@@ -13,9 +13,10 @@ import { MODES, speedAt } from './modes.js';
 import { zoneAt } from './zones.js';
 import { BOARDS, unlocksFor } from './boards.js';
 import {
-    starGeo, starMat, heartGeo, heartMat, glowTex, makeGlow, obstacleModel, rand, pick
+    starGeo, starMat, heartGeo, heartMat, glowTex, makeGlow, rand, pick
 } from './models.js';
 import { createBoardModel } from './boardModels.js';
+import { obstacleModel } from './skins.js';
 import { createSky } from './sky.js';
 
 // Tuning
