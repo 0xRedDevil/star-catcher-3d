@@ -1,0 +1,11 @@
+{
+  "name": "star-catcher-3d",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/"
+  },
+  "devDependencies": {
+    "three": "0.160.0"
+  }
+}
