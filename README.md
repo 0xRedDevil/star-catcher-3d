@@ -37,6 +37,8 @@ Score enough in a single ride, in either mode, to unlock a new board, and pick i
 | Galaxy | 5,000 | twinkling starfield, glowing cyan edge, star-dust trail |
 | Super Rainbow | 10,000 | sliding rainbow stripes, orbiting gold stars, rainbow glitter trail |
 
+Storm clouds drift side to side, so time your dodge, but there is always a clear way through.
+
 ## Controls
 
 - **Keyboard:** ← → arrow keys (or A / D)

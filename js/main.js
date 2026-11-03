@@ -28,6 +28,7 @@ const LOOK_AHEAD = 10;          // the camera looks at the track this far ahead
 const CREST_FLOAT = 0.35;       // how high the board floats over a hilltop
 const ITEM_Y = 0.9;             // height of stars and hearts above the track
 const CLOUD_Y = 1.4;            // storm clouds float at about head height
+const CLOUD_SPEED = 1.2;        // how fast storm clouds drift sideways
 const PLANET_Y = 0.5;
 const HITBOX = 0.9;             // hitboxes are a little smaller than the models, to be kind
 const BANNER_TIME = 2200;       // ms each banner stays up
@@ -584,7 +585,8 @@ function updateItems(dt, prevS) {
             continue;
         }
 
-        if (p.type === 'planet') it.x = planetX(p.range, elapsed + it.phase);
+        // Rolling planets and storm clouds move back and forth across their own stretch
+        if (p.range) it.x = planetX(p.range, elapsed + it.phase, p.kind === 'planet' ? 2 : CLOUD_SPEED);
         const f = track.frameAt(p.s);
         const bob = p.kind === 'stormCloud' ? Math.sin(time * 2 + it.phase) * 0.12 : 0;
         trackPoint(it.obj.position, f, it.x, it.height + bob);

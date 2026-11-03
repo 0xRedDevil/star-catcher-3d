@@ -56,8 +56,15 @@ const TRAIL_SPACING = 1.6;
 const PICKUP_RADIUS = 0.8;
 const EDGE = TRACK_HALF_WIDTH - 0.1;
 const TRIES = 8;
+const CLOUD_DRIFT = 1.5;   // storm clouds drift up to this far either side of where they start
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// Sideways distance from x to an obstacle, allowing for the whole of a drifting cloud's path
+function gapTo(p, x) {
+    if (!p.range) return Math.abs(p.x - x);
+    return x < p.range[0] ? p.range[0] - x : x > p.range[1] ? x - p.range[1] : 0;
+}
 
 export function createPlacer({ seed, track, mode = EASY }) {
     if (mode.free) return { fill: () => [] };
@@ -101,8 +108,22 @@ export function createPlacer({ seed, track, mode = EASY }) {
                 for (let t = 0; t < TRIES; t++) {
                     const x = rand(-(EDGE - radius), EDGE - radius);
                     if (Math.abs(x - safeX) < radius + SAFE_CLEAR) continue;
-                    if (placed.some(p => Math.abs(p.x - x) < p.radius + radius + SPACING)) continue;
+                    if (placed.some(p => gapTo(p, x) < p.radius + radius + SPACING)) continue;
                     const obstacle = { type: 'obstacle', kind, s, x, radius, ...tag };
+                    if (kind === 'stormCloud') {
+                        // Storm clouds drift side to side, but only on their own side of the safe lane,
+                        // and never into anything else in their row
+                        let lo = x < safeX ? -(EDGE - radius) : safeX + radius + SAFE_CLEAR;
+                        let hi = x < safeX ? safeX - radius - SAFE_CLEAR : EDGE - radius;
+                        for (const p of placed) {
+                            const keep = p.radius + radius + SPACING;
+                            if (p.x < x) lo = Math.max(lo, (p.range ? p.range[1] : p.x) + keep);
+                            else hi = Math.min(hi, (p.range ? p.range[0] : p.x) - keep);
+                        }
+                        const range = [Math.max(lo, x - CLOUD_DRIFT), Math.min(hi, x + CLOUD_DRIFT)];
+                        if (range[1] - range[0] < 1) continue; // too cramped to drift here
+                        obstacle.range = range;
+                    }
                     placed.push(obstacle);
                     out.push(obstacle);
                     break;

@@ -121,6 +121,41 @@ test('planets stay on one side of the safe lane', () => {
     }
 });
 
+test('storm clouds drift on their own side of the safe lane', () => {
+    for (const seed of [17, 18]) {
+        const clouds = ride(seed).all.filter(p => p.kind === 'stormCloud');
+        assert.ok(clouds.length > 20, 'storm clouds should appear');
+        for (const p of clouds) {
+            const clear = p.radius + 1.3;
+            assert.ok(Array.isArray(p.range), `cloud at s=${p.s} should drift`);
+            assert.ok(p.range[0] <= p.x && p.x <= p.range[1], 'drift range includes where it starts');
+            assert.ok(p.range[1] - p.range[0] >= 1, `cloud at s=${p.s} barely moves`);
+            const left = p.range[1] <= p.safeX - clear + EPS;
+            const right = p.range[0] >= p.safeX + clear - EPS;
+            assert.ok(left || right, `cloud at s=${p.s} would drift into the safe lane`);
+            assert.ok(p.range[0] - p.radius >= -(TRACK_HALF_WIDTH - 0.1) - EPS && p.range[1] + p.radius <= TRACK_HALF_WIDTH - 0.1 + EPS);
+        }
+    }
+});
+
+test('drifting clouds never pass through their neighbours', () => {
+    const { all } = ride(19, EASY, () => 120); // busy rows
+    const byRow = new Map();
+    for (const p of obstacles(all)) byRow.set(p.row, [...(byRow.get(p.row) || []), p]);
+    let checked = 0;
+    for (const list of byRow.values()) {
+        for (const cloud of list.filter(p => p.range)) {
+            for (const other of list.filter(p => p !== cloud)) {
+                const [lo, hi] = cloud.range;
+                const gap = other.x < lo ? lo - other.x : other.x > hi ? other.x - hi : 0;
+                assert.ok(gap >= cloud.radius + other.radius + 0.3 - EPS, `cloud drifts into a ${other.kind} at s=${cloud.s}`);
+                checked++;
+            }
+        }
+    }
+    assert.ok(checked > 20, 'should have busy rows with clouds to check');
+});
+
 test('rows get closer and fuller the longer you ride', () => {
     const stats = (elapsed) => {
         const { all } = ride(14, EASY, () => elapsed);

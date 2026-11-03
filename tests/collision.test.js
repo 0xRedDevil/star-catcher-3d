@@ -46,6 +46,12 @@ test('planets roll within their range', () => {
     assert.ok(reachedLow && reachedHigh, 'planet should roll from end to end');
 });
 
+test('drift speed can be set', () => {
+    // At speed 1 it takes twice as long to cross the range as at speed 2
+    assert.ok(Math.abs(planetX([0, 2], 1, 2) - 2) < 1e-9);
+    assert.ok(Math.abs(planetX([0, 2], 1, 1) - 1) < 1e-9);
+});
+
 test('a rider who never steers gets hit', () => {
     const track = createTrack({ seed: 31, difficulty: () => 1 });
     const placer = createPlacer({ seed: 31, track, mode: EASY });
@@ -53,7 +59,7 @@ test('a rider who never steers gets hit', () => {
     let hits = 0;
     for (let s = 0.2; s <= 600; s += 0.2) {
         for (const item of items) {
-            const x = item.type === 'planet' ? planetX(item.range, s / 11) : item.x;
+            const x = item.range ? planetX(item.range, s / 11) : item.x;
             if (sweptCheck({ ...item, x }, s - 0.2, s, 0) === 'hit') hits++;
         }
     }
