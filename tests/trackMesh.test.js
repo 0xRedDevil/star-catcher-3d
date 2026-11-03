@@ -2,7 +2,24 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createTrack, TRACK_HALF_WIDTH } from '../js/track.js';
-import { buildChunk, createTrackView, CHUNK_LENGTH, WALL_HEIGHT, PURPLE_STYLE, RAINBOW_STYLE } from '../js/trackMesh.js';
+import { buildChunk, createTrackView, CHUNK_LENGTH, WALL_HEIGHT, PURPLE_STYLE, RAINBOW_STYLE, ZONE_STYLES } from '../js/trackMesh.js';
+import { zoneAt } from '../js/zones.js';
+
+test('track view styles each chunk by its zone', () => {
+    const track = createTrack({ seed: 7, difficulty: () => 1 });
+    const scene = new THREE.Group();
+    const view = createTrackView(track, scene, s => ZONE_STYLES[zoneAt(s).zone.id]);
+    const roadAt = (s) => {
+        const chunk = scene.children.find(c => c.userData.s0 === s);
+        return chunk && chunk.getObjectByName('ribbon').material;
+    };
+    view.update(560);
+    assert.equal(roadAt(600), ZONE_STYLES.candy._materials.road);
+    assert.equal(roadAt(550), ZONE_STYLES.starlight._materials.road);
+    view.update(1760);
+    assert.equal(roadAt(1800), ZONE_STYLES.rainbow._materials.road);
+    view.dispose();
+});
 
 test('purple glass road lets space show through', () => {
     const track = createTrack({ seed: 5 });

@@ -18,6 +18,14 @@ export const RAINBOW_STYLE = {
     wallColor: 0xff77ff,
 };
 
+// One road look per zone (see zones.js)
+export const ZONE_STYLES = {
+    starlight: PURPLE_STYLE,
+    candy: { road: 'glass', color: 0xff6ec7, opacity: 0.45, edgeColor: 0xffd1ec, wallColor: 0xff9fd0 },
+    crystal: { road: 'glass', color: 0x4fc3ff, opacity: 0.45, edgeColor: 0xd0f2ff, wallColor: 0x7fe8ff },
+    rainbow: RAINBOW_STYLE,
+};
+
 // Faint lines and sparkles in the glass, so you can feel the speed
 function makeGlassTexture() {
     if (typeof document === 'undefined') return null; // tests run in Node
@@ -175,8 +183,10 @@ function disposeChunk(chunk) {
     chunk.traverse(obj => obj.geometry && obj.geometry.dispose());
 }
 
-export function createTrackView(track, scene, style) {
+// styleFor is one style, or a function giving the style for a chunk starting at s
+export function createTrackView(track, scene, styleFor) {
     const chunks = new Map(); // chunk index -> group
+    const styleAt = typeof styleFor === 'function' ? styleFor : () => styleFor;
 
     function update(sRider) {
         const kMin = Math.max(0, Math.floor((sRider - KEEP_BEHIND) / CHUNK_LENGTH));
@@ -190,7 +200,9 @@ export function createTrackView(track, scene, style) {
         }
         for (let k = kMin; k <= kMax; k++) {
             if (!chunks.has(k)) {
-                const chunk = buildChunk(track, k * CHUNK_LENGTH, (k + 1) * CHUNK_LENGTH, style);
+                const s0 = k * CHUNK_LENGTH;
+                const chunk = buildChunk(track, s0, s0 + CHUNK_LENGTH, styleAt(s0));
+                chunk.userData.s0 = s0;
                 scene.add(chunk);
                 chunks.set(k, chunk);
             }
