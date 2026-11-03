@@ -9,6 +9,7 @@ const KEYS = {
     unlocked: 'sc3d_unlocked',
     board: 'sc3d_board',
     mode: 'sc3d_mode',
+    celebrated: 'sc3d_celebrated',
 };
 const MODES = ['easy', 'hard'];
 const TOP = 5;
@@ -81,6 +82,8 @@ export function createStore(backing = defaultBacking()) {
     if (Array.isArray(savedUnlocks)) {
         for (const id of savedUnlocks) if (typeof id === 'string' && !unlockedIds.includes(id)) unlockedIds.push(id);
     }
+    const savedCelebrations = parseJson(read(KEYS.celebrated));
+    const celebratedIds = Array.isArray(savedCelebrations) ? savedCelebrations.filter(id => typeof id === 'string') : [];
     let chosenBoard = read(KEYS.board);
     let mode = read(KEYS.mode) === 'hard' ? 'hard' : 'easy';
 
@@ -122,6 +125,15 @@ export function createStore(backing = defaultBacking()) {
             chosenBoard = id;
             write(KEYS.board, id);
             return true;
+        },
+
+        // The first ride on a newly unlocked board gets a celebration, once
+        celebrated: (id) => celebratedIds.includes(id),
+
+        markCelebrated(id) {
+            if (celebratedIds.includes(id)) return;
+            celebratedIds.push(id);
+            write(KEYS.celebrated, JSON.stringify(celebratedIds));
         },
 
         lastMode: () => mode,

@@ -76,11 +76,18 @@ export function createSky(scene) {
         return planet;
     });
 
-    // Soft coloured nebula glows
-    for (let i = 0; i < 6; i++) {
+    // Soft coloured nebula glows; each zone gives them its own colours
+    const nebulae = Array.from({ length: 6 }, () => {
         const nebula = farGlow(pick([0xff5fd2, 0x4fd8ff, 0x9b6bff, 0xff9fd0]), rand(120, 200), rand(0.12, 0.22));
+        nebula.name = 'nebula';
         nebula.position.copy(skyPoint(240, -0.4, 0.8));
+        nebula.userData.target = nebula.material.color.clone();
         far.add(nebula);
+        return nebula;
+    });
+
+    function setNebula(colors) {
+        nebulae.forEach((nebula, i) => nebula.userData.target.set(colors[i % colors.length]));
     }
 
     // Comets drift slowly across the sky, tail pointing away from where they're heading
@@ -144,6 +151,13 @@ export function createSky(scene) {
     function update(dt, riderPos) {
         far.position.copy(riderPos);
         for (const planet of planets) planet.rotation.y += planet.userData.spin * dt;
+        for (const nebula of nebulae) {
+            const color = nebula.material.color;
+            color.lerp(nebula.userData.target, Math.min(1, dt * 0.8));
+            // Settle exactly once close, so the colour doesn't creep forever
+            if (Math.abs(color.r - nebula.userData.target.r) + Math.abs(color.g - nebula.userData.target.g)
+                + Math.abs(color.b - nebula.userData.target.b) < 0.002) color.copy(nebula.userData.target);
+        }
 
         for (const c of comets) {
             c.comet.position.addScaledVector(c.velocity, dt);
@@ -182,5 +196,5 @@ export function createSky(scene) {
         glitterGeo.attributes.position.needsUpdate = true;
     }
 
-    return { update };
+    return { update, setNebula };
 }

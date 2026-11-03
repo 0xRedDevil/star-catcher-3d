@@ -92,6 +92,16 @@ test("a saved board that isn't unlocked falls back to the starter", () => {
     assert.equal(store.board(), 'galaxy');
 });
 
+test('a board is celebrated only once', () => {
+    const backing = memoryBacking();
+    const store = createStore(backing);
+    assert.equal(store.celebrated('candy'), false);
+    store.markCelebrated('candy');
+    assert.equal(store.celebrated('candy'), true);
+    assert.equal(createStore(backing).celebrated('candy'), true);
+    assert.equal(createStore(backing).celebrated('galaxy'), false);
+});
+
 test('last mode is remembered', () => {
     const backing = memoryBacking();
     createStore(backing).setLastMode('hard');

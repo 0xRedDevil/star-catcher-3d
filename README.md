@@ -12,9 +12,30 @@ Play it at https://0xreddevil.github.io/star-catcher-3d/
 - ❤️ Lives: you start with 3. A bump costs one, then you blink and are safe for a moment. The ride ends at 0.
 - 🪄 The glowing walls keep you on the track, so you can't fall off
 
-There's always a clear way through each row of obstacles. The track is generated as you ride, so every ride is different. Top 5 scores are saved in the browser (localStorage).
+There's always a clear way through each row of obstacles. The track is generated as you ride, so every ride is different.
 
-**Free Ride 🌌** is the same track with no obstacles, stars, score or lives, just for the ride. Press **Menu** (or Escape) to go back.
+### Modes
+
+- **Easy 🌈**: 3 lives, and hearts can top you up to 5.
+- **Hard 🔥**: 3 lives and no hearts. It's faster, with busier rows.
+- **Free Ride 🌌**: the same track with no obstacles, stars, score or lives, just for the ride. Press **Menu** (or Escape) to go back.
+
+Easy and Hard each keep their own top 5 and best score, saved in the browser (localStorage).
+
+### Zones
+
+The track passes through a new zone every 600 units: 🌌 Starlight Sea, 🍬 Candy Nebula, 💎 Crystal Galaxy, then the special 🌈 Rainbow Moon with its rainbow road. After that they start again as "Starlight Sea II" and so on.
+
+### Boards
+
+Score enough in a single ride, in either mode, to unlock a new board, and pick it on the start screen:
+
+| Board | Unlock | Look |
+|---|---|---|
+| Starter | from the start | plain lilac |
+| Candy | 2,000 | scrolling pink and mint swirl, pulsing pink glow, heart-sparkle trail |
+| Galaxy | 5,000 | twinkling starfield, glowing cyan edge, star-dust trail |
+| Super Rainbow | 10,000 | sliding rainbow stripes, orbiting gold stars, rainbow glitter trail |
 
 ## Controls
 

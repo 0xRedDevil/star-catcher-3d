@@ -21,6 +21,17 @@ test('sky has planets', () => {
     assert.ok(planets.length >= 3, `${planets.length} planets`);
 });
 
+test('nebulae drift to the zone colours', () => {
+    const scene = new THREE.Scene();
+    const sky = createSky(scene);
+    sky.setNebula([0xff0000, 0x00ff00]);
+    for (let i = 0; i < 600; i++) sky.update(1 / 60, new THREE.Vector3());
+    const colours = new Set();
+    scene.traverse(obj => { if (obj.name === 'nebula') colours.add(obj.material.color.getHex()); });
+    assert.ok(colours.size > 0, 'nebulae exist');
+    for (const c of colours) assert.ok([0xff0000, 0x00ff00].includes(c), `nebula colour ${c.toString(16)}`);
+});
+
 test('sky can update without errors', () => {
     const scene = new THREE.Scene();
     const sky = createSky(scene);

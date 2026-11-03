@@ -3,11 +3,15 @@ import * as THREE from 'three';
 import { createTrack } from './track.js';
 import { RIDER_LIMIT, MAX_DT, steer, advanceRide, wallBounceStep } from './riding.js';
 import { createScoring, STAR_POINTS, HEART_POINTS, NEAR_MISS_POINTS } from './scoring.js';
-import { createTrackView, PURPLE_STYLE, RAINBOW_STYLE } from './trackMesh.js';
-import { createPlacer, EASY, FREE_RIDE, PLACE_AHEAD } from './placement.js';
+import { createTrackView, ZONE_STYLES } from './trackMesh.js';
+import { createPlacer, FREE_RIDE, PLACE_AHEAD } from './placement.js';
 import { useDistanceFog, FOG_NEAR, FOG_FAR } from './fog.js';
 import { sweptCheck, planetX } from './collision.js';
 import { createLives } from './lives.js';
+import { createStore } from './storage.js';
+import { MODES, speedAt } from './modes.js';
+import { zoneAt } from './zones.js';
+import { BOARDS, unlocksFor } from './boards.js';
 import {
     starGeo, starMat, heartGeo, heartMat, glowTex, makeGlow, createWand, obstacleModel, rand, pick
 } from './models.js';
@@ -16,9 +20,6 @@ import { createSky } from './sky.js';
 
 // Tuning
 const START_SPEED = 7;          // gentle ride behind the menu
-const BASE_SPEED = 11;
-const MAX_SPEED = 22;
-const SPEED_GROWTH = 0.15;      // speed gained per second of riding
 const STEER_SPEED = 8;          // keyboard steering, units per second
 const DRAG_RANGE = 12;          // track units for a drag across the whole screen
 const CAM_BACK = 2.2;           // camera distance behind the rider
@@ -29,10 +30,12 @@ const ITEM_Y = 0.9;             // height of stars and hearts above the track
 const CLOUD_Y = 1.4;            // storm clouds float at about head height
 const PLANET_Y = 0.5;
 const HITBOX = 0.9;             // hitboxes are a little smaller than the models, to be kind
-const TRACK_STYLE = PURPLE_STYLE;
+const BANNER_TIME = 2200;       // ms each banner stays up
 
 const clamp = THREE.MathUtils.clamp;
-const container = document.getElementById('game');
+const $ = (id) => document.getElementById(id);
+const container = $('game');
+const store = createStore();
 
 let renderer;
 try {
@@ -50,6 +53,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x150a2e);
 useDistanceFog(THREE); // must run before anything is first drawn
 scene.fog = new THREE.Fog(0x150a2e, FOG_NEAR, FOG_FAR); // hides track being built in the distance
+const skyTarget = new THREE.Color(0x150a2e);
 
 const camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
 scene.add(camera); // so the wand (a child of the camera) is drawn
@@ -66,8 +70,14 @@ const rider = new THREE.Group();
 scene.add(rider);
 const leanPivot = new THREE.Group();
 rider.add(leanPivot);
-let boardModel = createBoardModel('starter');
-leanPivot.add(boardModel.group);
+let boardModel = null;
+
+function useBoard(id) {
+    if (boardModel) leanPivot.remove(boardModel.group);
+    boardModel = createBoardModel(id);
+    leanPivot.add(boardModel.group);
+}
+useBoard(store.board());
 
 const wand = createWand();
 camera.add(wand.group);
@@ -108,8 +118,8 @@ function orient(obj, f) {
     obj.quaternion.setFromRotationMatrix(_basis);
 }
 
-// Rainbow sparkles trailing off the board, left behind in the world
-const TRAIL_COUNT = 80;
+// Sparkles trailing off the board, in the board's own colours, left behind in the world
+const TRAIL_COUNT = 160;
 const trailPos = new Float32Array(TRAIL_COUNT * 3).fill(-1e5);
 const trailCol = new Float32Array(TRAIL_COUNT * 3);
 const trailVel = Array.from({ length: TRAIL_COUNT }, () => new THREE.Vector3());
@@ -123,20 +133,19 @@ const trailPoints = new THREE.Points(trailGeo, new THREE.PointsMaterial({
 }));
 trailPoints.frustumCulled = false;
 scene.add(trailPoints);
-const rainbowColors = RAINBOW_STYLE.colors.map(c => new THREE.Color(c));
 let trailNext = 0;
 const _emit = new THREE.Vector3();
 
 function updateTrail(dt, emitting) {
     if (emitting) {
-        for (let n = 0; n < 2; n++) {
+        for (let n = 0; n < boardModel.trailRate; n++) {
             const i = trailNext;
             trailNext = (trailNext + 1) % TRAIL_COUNT;
             const side = Math.random() < 0.5 ? -1 : 1;
             rider.localToWorld(_emit.set(side * 0.4, 0.15, rand(-1.4, 0.4)));
             trailPos.set([_emit.x, _emit.y, _emit.z], i * 3);
             trailVel[i].set(rand(-0.5, 0.5), rand(0.4, 1.2), rand(-0.5, 0.5));
-            const c = pick(rainbowColors);
+            const c = pick(boardModel.trailColors);
             trailCol.set([c.r, c.g, c.b], i * 3);
             trailLife[i] = 0.5;
         }
@@ -153,15 +162,14 @@ function updateTrail(dt, emitting) {
     trailGeo.attributes.color.needsUpdate = true;
 }
 
-// Sparkle bursts for catches, bumps, near misses and wall touches
+// Sparkle bursts for catches, bumps, near misses, wall touches and celebrations
 let bursts = [];
-function burst(pos, color, size = 0.35) {
-    const n = 18;
-    const positions = new Float32Array(n * 3);
+function burst(pos, color, size = 0.35, count = 18, speed = 3) {
+    const positions = new Float32Array(count * 3);
     const velocities = [];
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < count; i++) {
         positions.set([pos.x, pos.y, pos.z], i * 3);
-        velocities.push(new THREE.Vector3(rand(-3, 3), rand(0, 4), rand(-3, 3)));
+        velocities.push(new THREE.Vector3(rand(-speed, speed), rand(0, speed * 1.3), rand(-speed, speed)));
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -194,6 +202,13 @@ function updateBursts(dt) {
     }
 }
 
+// A big sparkly celebration around the board, in its own colours
+function celebrate() {
+    boardModel.trailColors.forEach((c, i) => {
+        setTimeout(() => burst(rider.position, c.getHex(), 0.45, 30, 4), i * 120);
+    });
+}
+
 // Audio setup (Web Audio API for zero external file dependencies)
 let audioCtx = null;
 function initAudio() {
@@ -203,86 +218,88 @@ function initAudio() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
+function tone(type, from, to, length, volume, at = 0) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime + at;
+    osc.type = type;
+    osc.frequency.setValueAtTime(from, now);
+    if (to !== from) osc.frequency.exponentialRampToValueAtTime(to, now + length);
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + length);
+    osc.start(now);
+    osc.stop(now + length);
+}
+
 function playSound(type) {
     if (!audioCtx) return;
     try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        const now = audioCtx.currentTime;
-
-        if (type === 'star') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(587.33, now);
-            osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-            osc.start(now);
-            osc.stop(now + 0.15);
-        } else if (type === 'heart') {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(440, now);
-            osc.frequency.setValueAtTime(554.37, now + 0.08);
-            osc.frequency.setValueAtTime(659.25, now + 0.16);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
-        } else if (type === 'hurt') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.linearRampToValueAtTime(60, now + 0.25);
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-            osc.start(now);
-            osc.stop(now + 0.25);
-        } else if (type === 'whoosh') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(900, now);
-            osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
-            gain.gain.setValueAtTime(0.12, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-            osc.start(now);
-            osc.stop(now + 0.15);
-        } else if (type === 'boing') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(300, now);
-            osc.frequency.exponentialRampToValueAtTime(180, now + 0.18);
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
-            osc.start(now);
-            osc.stop(now + 0.18);
+        if (type === 'star') tone('sine', 587.33, 880, 0.15, 0.2);
+        else if (type === 'heart') {
+            tone('triangle', 440, 440, 0.08, 0.2);
+            tone('triangle', 554.37, 554.37, 0.08, 0.2, 0.08);
+            tone('triangle', 659.25, 659.25, 0.14, 0.2, 0.16);
+        } else if (type === 'hurt') tone('sawtooth', 150, 60, 0.25, 0.3);
+        else if (type === 'whoosh') tone('sine', 900, 300, 0.15, 0.12);
+        else if (type === 'boing') tone('sine', 300, 180, 0.18, 0.15);
+        else if (type === 'chime') {
+            tone('sine', 880, 880, 0.12, 0.15);
+            tone('sine', 1320, 1320, 0.2, 0.15, 0.12);
+        } else if (type === 'fanfare') {
+            [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone('triangle', f, f, i === 3 ? 0.35 : 0.1, 0.2, i * 0.1));
         }
     } catch (e) {
         // Ignore audio context autoplay blocks before interaction
     }
 }
 
-// Leaderboard Management
-const LB_KEY = 'star_catcher_3d_leaderboard';
-
-function getLeaderboard() {
-    try {
-        const data = localStorage.getItem(LB_KEY);
-        if (data) return JSON.parse(data);
-    } catch (e) {}
-    return [];
+// Banners and toasts, one at a time
+const bannerQueue = [];
+let bannerBusy = false;
+function showBanner(title, subtitle = '') {
+    bannerQueue.push({ title, subtitle });
+    if (!bannerBusy) nextBanner();
+}
+function nextBanner() {
+    const next = bannerQueue.shift();
+    const el = $('banner');
+    if (!next) {
+        bannerBusy = false;
+        el.classList.remove('show');
+        return;
+    }
+    bannerBusy = true;
+    $('banner-title').innerText = next.title;
+    $('banner-subtitle').innerText = next.subtitle;
+    el.classList.add('show');
+    setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(nextBanner, 300);
+    }, BANNER_TIME);
+}
+function clearBanners() {
+    bannerQueue.length = 0;
 }
 
-function saveLeaderboard(lb) {
-    try {
-        localStorage.setItem(LB_KEY, JSON.stringify(lb));
-    } catch (e) {}
+let toastTimer = null;
+function showToast(text) {
+    const el = $('zone-toast');
+    el.innerText = text;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
+// Leaderboards
 function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function renderLeaderboard(elementId) {
-    const listEl = document.getElementById(elementId);
-    const lb = getLeaderboard();
+function renderLeaderboard(elementId, modeId) {
+    const listEl = $(elementId);
+    const lb = store.leaderboard(modeId);
     listEl.innerHTML = '';
     if (lb.length === 0) {
         const li = document.createElement('li');
@@ -306,6 +323,8 @@ function renderLeaderboard(elementId) {
 // Game state
 let gameState = 'START'; // START, PLAYING, GAMEOVER
 let freeRide = false;
+let modeId = store.lastMode();
+let lbTab = modeId;
 let track = null;
 let trackView = null;
 let placer = null;
@@ -320,6 +339,9 @@ let shake = 0;
 let scoring = createScoring();
 let lives = createLives();
 let shownScore = -1;
+let previousBest = 0;
+let newBestShown = false;
+let zoneIndex = 0;
 let items = [];
 
 function clearItems() {
@@ -327,16 +349,27 @@ function clearItems() {
     items = [];
 }
 
-function newTrack(mode) {
+function enterZone(z, announce) {
+    zoneIndex = z.index;
+    skyTarget.set(z.zone.sky);
+    sky.setNebula(z.zone.nebula);
+    if (announce) {
+        showToast(z.name);
+        playSound('chime');
+    }
+}
+
+function newTrack(placement) {
     if (trackView) trackView.dispose();
     clearItems();
     const seed = Math.floor(Math.random() * 1e9);
     track = createTrack({ seed, difficulty: () => Math.min(1, elapsed / 120) });
-    trackView = createTrackView(track, scene, TRACK_STYLE);
-    placer = createPlacer({ seed, track, mode });
+    trackView = createTrackView(track, scene, (s) => ZONE_STYLES[zoneAt(s).zone.id]);
+    placer = createPlacer({ seed, track, mode: placement });
     ride = { s: 0, speed: ride.speed };
     x = 0;
     targetX = 0;
+    enterZone(zoneAt(0), false);
 }
 
 // Turn a placement into something you can see on the track
@@ -365,22 +398,39 @@ function spawn(p) {
 
 function updateHud() {
     shownScore = scoring.score;
-    document.getElementById('score-display').innerText = scoring.score.toLocaleString();
-    document.getElementById('lives-display').innerText = '❤️'.repeat(Math.max(0, lives.lives));
+    $('score-display').innerText = scoring.score.toLocaleString();
+    $('best-display').innerText = Math.max(previousBest, scoring.score).toLocaleString();
+    $('lives-display').innerText = '❤️'.repeat(Math.max(0, lives.lives));
     const mult = scoring.multiplier();
-    document.getElementById('combo-display').innerText = mult;
-    document.getElementById('combo-pill').style.visibility = mult > 1 ? 'visible' : 'hidden';
+    $('combo-display').innerText = mult;
+    $('combo-pill').style.visibility = mult > 1 ? 'visible' : 'hidden';
+
+    if (gameState !== 'PLAYING' || freeRide) return;
+    // Passing your best, once per ride
+    if (!newBestShown && previousBest > 0 && scoring.score > previousBest) {
+        newBestShown = true;
+        showBanner('NEW BEST! 🏆', `${MODES[modeId].label} mode`);
+        playSound('fanfare');
+        burst(rider.position, 0xffd700, 0.4, 30, 4);
+    }
+    // Unlocks are saved straight away, so they survive closing the tab
+    for (const id of store.unlock(unlocksFor(scoring.score))) {
+        const board = BOARDS.find(b => b.id === id);
+        showBanner('NEW BOARD UNLOCKED! ✨', board.name);
+        playSound('fanfare');
+        burst(rider.position, 0xff99ff, 0.45, 30, 4);
+    }
 }
 
 function popCombo(multiplierUp) {
     if (!multiplierUp) return;
-    const pill = document.getElementById('combo-pill');
+    const pill = $('combo-pill');
     pill.classList.add('pop');
     setTimeout(() => pill.classList.remove('pop'), 200);
 }
 
 function flashHit() {
-    const el = document.getElementById('hit-flash');
+    const el = $('hit-flash');
     el.style.transition = 'none';
     el.style.opacity = '1';
     requestAnimationFrame(() => {
@@ -391,54 +441,99 @@ function flashHit() {
 
 function showScreen(id) {
     for (const screen of ['start-screen', 'game-over-screen']) {
-        document.getElementById(screen).classList.toggle('hidden', screen !== id);
+        $(screen).classList.toggle('hidden', screen !== id);
     }
 }
 
-function startGame(free = false) {
+// Start screen: mode buttons, board picker and the top 5 tabs
+function renderStart() {
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('last', btn.dataset.mode === modeId));
+    document.querySelectorAll('.lb-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === lbTab));
+    renderLeaderboard('start-lb', lbTab);
+
+    const picker = $('board-picker');
+    picker.innerHTML = '';
+    const unlocked = store.unlocked();
+    for (const board of BOARDS) {
+        const open = unlocked.includes(board.id);
+        const card = document.createElement('button');
+        card.className = `board-card board-${board.id}${open ? '' : ' locked'}${store.board() === board.id ? ' selected' : ''}`;
+        card.innerHTML = `
+            <span class="board-swatch"></span>
+            <span class="board-name">${board.name}</span>
+            <span class="board-lock">${open ? (store.board() === board.id ? '✓ Riding' : 'Tap to ride') : `🔒 Score ${board.unlockScore.toLocaleString()}`}</span>
+        `;
+        card.addEventListener('click', () => {
+            if (!store.setBoard(board.id)) return;
+            useBoard(board.id);
+            renderStart();
+        });
+        picker.appendChild(card);
+    }
+}
+
+function startGame(nextMode) {
     initAudio();
-    freeRide = free;
+    clearBanners();
+    freeRide = nextMode === 'free';
+    if (!freeRide) {
+        modeId = nextMode;
+        store.setLastMode(modeId);
+    }
+    const mode = MODES[freeRide ? 'easy' : modeId];
     elapsed = 0;
     shake = 0;
     scoring = createScoring();
-    lives = createLives();
-    newTrack(free ? FREE_RIDE : EASY);
-    ride.speed = BASE_SPEED;
+    lives = createLives({ start: mode.lives, max: mode.maxLives });
+    previousBest = freeRide ? 0 : store.best(modeId);
+    newBestShown = false;
+    newTrack(freeRide ? FREE_RIDE : mode.placement);
+    ride.speed = speedAt(mode, 0);
 
     showScreen(null);
-    document.getElementById('hud').classList.remove('hidden');
-    document.getElementById('hud').classList.toggle('free-ride', free);
+    $('hud').classList.remove('hidden');
+    $('hud').classList.toggle('free-ride', freeRide);
     updateHud();
     gameState = 'PLAYING';
+
+    // The first ride on a newly unlocked board gets a celebration
+    const boardId = store.board();
+    if (boardId !== 'starter' && !store.celebrated(boardId)) {
+        store.markCelebrated(boardId);
+        showBanner(`Riding the ${BOARDS.find(b => b.id === boardId).name}! 🎉`);
+        playSound('fanfare');
+        setTimeout(celebrate, 200);
+    }
 }
 
 function goToMenu() {
-    if (gameState !== 'PLAYING' || !freeRide) return;
+    if (gameState === 'START') return;
+    if (gameState === 'PLAYING' && !freeRide) return; // only Free Ride can leave mid-ride
     gameState = 'START';
     freeRide = false;
+    clearBanners();
     newTrack(FREE_RIDE);
-    document.getElementById('hud').classList.add('hidden');
+    $('hud').classList.add('hidden');
+    lbTab = modeId;
+    renderStart();
     showScreen('start-screen');
 }
 
 function triggerGameOver() {
     gameState = 'GAMEOVER';
     leanPivot.visible = true;
-    document.getElementById('hud').classList.add('hidden');
-    document.getElementById('final-score').innerText = scoring.score.toLocaleString();
-    document.getElementById('best-combo').innerText = 'x' + scoring.bestMultiplier;
+    clearBanners();
+    store.recordBest(modeId, scoring.score);
+    $('hud').classList.add('hidden');
+    $('final-score').innerText = scoring.score.toLocaleString();
+    $('best-combo').innerText = 'x' + scoring.bestMultiplier;
+    $('zone-reached').innerText = zoneAt(ride.s).name;
+    $('gameover-lb-title').innerText = `🏆 ${MODES[modeId].label} Top 5`;
 
-    const lb = getLeaderboard();
-    const lowestScore = lb.length < 5 ? 0 : lb[lb.length - 1].score;
-    const hsSection = document.getElementById('new-high-score-section');
-    if (scoring.score > 0 && (scoring.score > lowestScore || lb.length < 5)) {
-        hsSection.classList.remove('hidden');
-        document.getElementById('player-name').value = '';
-    } else {
-        hsSection.classList.add('hidden');
-    }
+    $('new-high-score-section').classList.toggle('hidden', !store.qualifies(modeId, scoring.score));
+    $('player-name').value = '';
 
-    renderLeaderboard('gameover-lb');
+    renderLeaderboard('gameover-lb', modeId);
     showScreen('game-over-screen');
 }
 
@@ -521,6 +616,7 @@ let dragPointer = null;
 let lastPointerX = 0;
 
 window.addEventListener('keydown', (e) => {
+    if (e.target && e.target.tagName === 'INPUT') return; // typing a name
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
     if (e.key === 'Escape') goToMenu();
@@ -567,7 +663,7 @@ function frame() {
     let base = 0;
     if (gameState === 'PLAYING') {
         elapsed += dt;
-        base = Math.min(MAX_SPEED, BASE_SPEED + elapsed * SPEED_GROWTH);
+        base = speedAt(MODES[freeRide ? 'easy' : modeId], elapsed);
     } else if (gameState === 'START') {
         base = START_SPEED;
     }
@@ -583,6 +679,12 @@ function frame() {
         lives.tick(dt);
         if (scoring.score !== shownScore) updateHud();
     }
+
+    // Zones: new sky colours, and a toast with a chime while riding
+    const z = zoneAt(ride.s);
+    if (z.index !== zoneIndex) enterZone(z, gameState === 'PLAYING');
+    scene.background.lerp(skyTarget, Math.min(1, dt * 0.6));
+    scene.fog.color.copy(scene.background);
 
     // Steering
     if (gameState === 'PLAYING') {
@@ -644,26 +746,23 @@ function frame() {
 }
 
 // UI buttons
-document.getElementById('start-btn').addEventListener('click', () => startGame(false));
-document.getElementById('free-btn').addEventListener('click', () => startGame(true));
-document.getElementById('restart-btn').addEventListener('click', () => startGame(false));
-document.getElementById('menu-btn').addEventListener('click', goToMenu);
+document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.mode)));
+document.querySelectorAll('.lb-tab').forEach(btn => btn.addEventListener('click', () => {
+    lbTab = btn.dataset.tab;
+    renderStart();
+}));
+$('free-btn').addEventListener('click', () => startGame('free'));
+$('restart-btn').addEventListener('click', () => startGame(modeId));
+$('gameover-menu-btn').addEventListener('click', goToMenu);
+$('menu-btn').addEventListener('click', goToMenu);
 
-document.getElementById('save-score-btn').addEventListener('click', () => {
-    const nameInput = document.getElementById('player-name');
-    const name = nameInput.value.trim() || 'Fairy Rider';
-
-    let lb = getLeaderboard();
-    lb.push({ name, score: scoring.score });
-    lb.sort((a, b) => b.score - a.score);
-    lb = lb.slice(0, 5);
-
-    saveLeaderboard(lb);
-    document.getElementById('new-high-score-section').classList.add('hidden');
-    renderLeaderboard('gameover-lb');
-    renderLeaderboard('start-lb');
+$('save-score-btn').addEventListener('click', () => {
+    const name = $('player-name').value.trim() || 'Fairy Rider';
+    store.addScore(modeId, name, scoring.score);
+    $('new-high-score-section').classList.add('hidden');
+    renderLeaderboard('gameover-lb', modeId);
 });
 
 newTrack(FREE_RIDE);
-renderLeaderboard('start-lb');
+renderStart();
 renderer.setAnimationLoop(frame);
