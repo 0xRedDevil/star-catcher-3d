@@ -13,7 +13,7 @@ import { MODES, speedAt } from './modes.js';
 import { zoneAt } from './zones.js';
 import { BOARDS, unlocksFor } from './boards.js';
 import {
-    starGeo, starMat, heartGeo, heartMat, glowTex, makeGlow, createWand, obstacleModel, rand, pick
+    starGeo, starMat, heartGeo, heartMat, glowTex, makeGlow, obstacleModel, rand, pick
 } from './models.js';
 import { createBoardModel } from './boardModels.js';
 import { createSky } from './sky.js';
@@ -56,7 +56,6 @@ scene.fog = new THREE.Fog(0x150a2e, FOG_NEAR, FOG_FAR); // hides track being bui
 const skyTarget = new THREE.Color(0x150a2e);
 
 const camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
-scene.add(camera); // so the wand (a child of the camera) is drawn
 
 scene.add(new THREE.HemisphereLight(0xffe8ff, 0x4a2a7a, 1.3));
 const moonLight = new THREE.DirectionalLight(0xfff0dd, 1.8);
@@ -79,9 +78,6 @@ function useBoard(id) {
 }
 useBoard(store.board());
 
-const wand = createWand();
-camera.add(wand.group);
-let wandPulse = 0;
 
 function resize() {
     const w = container.clientWidth;
@@ -91,10 +87,6 @@ function resize() {
     // Portrait phones need a wider view to see obstacles coming
     camera.fov = w < h ? 90 : 70;
     camera.updateProjectionMatrix();
-    // Keep the wand on screen, even on narrow phones
-    const depth = 1.0;
-    const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * depth * camera.aspect;
-    wand.group.position.set(Math.min(0.5, halfW * 0.7), -0.42, -depth);
 }
 window.addEventListener('resize', resize);
 resize();
@@ -561,7 +553,6 @@ function touch(it, result) {
         if (p.type === 'heart') lives.heal();
         playSound(p.type);
         burst(it.obj.position, p.type === 'star' ? 0xffee55 : 0xff5599);
-        wandPulse = 0.4;
         scene.remove(it.obj);
         updateHud();
         return;
@@ -748,11 +739,6 @@ function frame() {
     camera.lookAt(_look);
 
     sky.update(dt, rider.position);
-
-    // Wand bobs along and glows when you catch something
-    wand.group.position.y = -0.42 + Math.sin(time * 3) * 0.01;
-    if (wandPulse > 0) wandPulse -= dt;
-    wand.glow.scale.setScalar(0.35 + Math.max(0, wandPulse) * 1.5);
 
     renderer.render(scene, camera);
 }

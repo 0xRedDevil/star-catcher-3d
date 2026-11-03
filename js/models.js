@@ -1,4 +1,4 @@
-// Shared models: glow sprites, low-poly model baking, stars, hearts, the board and the wand
+// Shared models: glow sprites, low-poly model baking, obstacles, stars and hearts
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { KIND_RADIUS } from './placement.js';
@@ -332,22 +332,3 @@ export const heartMat = new THREE.MeshStandardMaterial({
 export const boltGeo = new THREE.ShapeGeometry(boltShape());
 export const boltMat = new THREE.MeshBasicMaterial({ color: 0xffee55, side: THREE.DoubleSide });
 
-// The fairy's wand, held at the side of the view
-export function createWand() {
-    const group = new THREE.Group();
-    const stick = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.012, 0.016, 0.5, 6),
-        new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.5, roughness: 0.3 })
-    );
-    group.add(stick);
-    const tip = new THREE.Mesh(starGeo, starMat);
-    tip.scale.setScalar(0.18);
-    tip.position.y = 0.28;
-    group.add(tip);
-    const glow = makeGlow(0xffff88, 0.35, 0.9);
-    glow.position.y = 0.28;
-    group.add(glow);
-    group.rotation.set(-0.5, 0, 0.35);
-    group.scale.setScalar(0.65); // small enough not to hide the track
-    return { group, glow };
-}

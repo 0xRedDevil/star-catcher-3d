@@ -35,7 +35,7 @@ Collecting is a seasoning, not the main course. The owner explicitly asked for f
 
 ## Anti-goals (would be a failure even if it works)
 
-- Copying Mario Kart's Rainbow Road or Snow Rider: no names, characters, art, track layouts or logos from either. The look stays this game's own: night space sky, moon, fairy wand, rainbow board, pastel low-poly models.
+- Copying Mario Kart's Rainbow Road or Snow Rider: no names, characters, art, track layouts or logos from either. The look stays this game's own: night space sky, moon, magic boards, pastel low-poly models.
 - Unfair hits: obstacles appearing just over a hilltop or around a blind bend.
 - Falling off the track or losing a life to a wall.
 - Long menus or waits between runs.
@@ -101,7 +101,7 @@ The track is a ribbon generated a little at a time ahead of the rider and discar
 - The board fills roughly the lower third of the screen.
 - It rolls with the bank, but gently (about half the track's bank), and shake on a bump is small and short.
 - Field of view about 70° in landscape and wider in portrait, so phones still see enough of the track.
-- The fairy's wand is visible at one side of the view and glows when something is caught (already built in the draft).
+- **Decided by the owner after stage 3:** no wand in view; the board and the track speak for themselves.
 
 ### What's on the track
 
@@ -114,7 +114,7 @@ All models are low-poly and flat-shaded, each baked into one geometry with verte
 | Snowmen | Wizard hat, scarf, carrot nose; they face the rider. |
 | Crystal trees | Tiered, in icy colours, with a little star on top. |
 | Fairy houses | Glowing windows; they face the rider. |
-| Storm clouds | Float at head height, with a lightning bolt. |
+| Storm clouds | Float at head height, with a lightning bolt. **Decided by the owner after stage 3:** they drift side to side to make them trickier, staying on their own side of the safe lane. |
 | Rolling planets | Small ringed planets that roll side to side across the track and bounce off the walls. They start appearing later in a run. |
 
 **Scenery** (no collisions), floating off the track in space: big planets with rings, comets and shooting stars, floating islands with little castles and trees, the moon, a starfield and glitter.
