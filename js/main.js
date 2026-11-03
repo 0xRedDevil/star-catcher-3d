@@ -4,7 +4,8 @@ import { createTrack } from './track.js';
 import { RIDER_LIMIT, MAX_DT, steer, advanceRide, wallBounceStep } from './riding.js';
 import { createScoring, STAR_POINTS, HEART_POINTS, NEAR_MISS_POINTS } from './scoring.js';
 import { createTrackView, PURPLE_STYLE, RAINBOW_STYLE } from './trackMesh.js';
-import { createPlacer, EASY, FREE_RIDE } from './placement.js';
+import { createPlacer, EASY, FREE_RIDE, PLACE_AHEAD } from './placement.js';
+import { useDistanceFog, FOG_NEAR, FOG_FAR } from './fog.js';
 import { sweptCheck, planetX } from './collision.js';
 import { createLives } from './lives.js';
 import {
@@ -23,7 +24,6 @@ const CAM_BACK = 2.2;           // camera distance behind the rider
 const CAM_UP = 1.5;             // camera height above the board
 const LOOK_AHEAD = 10;          // the camera looks at the track this far ahead
 const CREST_FLOAT = 0.35;       // how high the board floats over a hilltop
-const PLACE_AHEAD = 150;        // things are placed this far ahead along the track
 const ITEM_Y = 0.9;             // height of stars and hearts above the track
 const CLOUD_Y = 1.4;            // storm clouds float at about head height
 const PLANET_Y = 0.5;
@@ -47,7 +47,8 @@ const canvas = renderer.domElement;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x150a2e);
-scene.fog = new THREE.Fog(0x150a2e, 70, 150); // hides track being built in the distance
+useDistanceFog(THREE); // must run before anything is first drawn
+scene.fog = new THREE.Fog(0x150a2e, FOG_NEAR, FOG_FAR); // hides track being built in the distance
 
 const camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
 scene.add(camera); // so the wand (a child of the camera) is drawn

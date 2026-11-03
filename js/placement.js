@@ -14,7 +14,8 @@ export const KIND_RADIUS = {
     stormCloud: 0.95,
     planet: 0.7,
 };
-export const OBSTACLE_KINDS = ['crystalPine', 'toadstool', 'moonRock', 'snowman', 'fairyHouse', 'stormCloud'];
+export const PLACE_AHEAD = 150;   // things are placed this far ahead of the rider, deep in the fog
+export const OBSTACLE_KINDS =['crystalPine', 'toadstool', 'moonRock', 'snowman', 'fairyHouse', 'stormCloud'];
 
 export const EASY = {
     hearts: true,

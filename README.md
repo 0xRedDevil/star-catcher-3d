@@ -1,19 +1,24 @@
 # Star Catcher 3D 🧚✨
 
-Ride a rainbow board along an endless sky track that climbs, dips and swoops through space. Catch stars to build your combo. The 3D follow-up to [Fairy Star Catcher](https://github.com/0xRedDevil/fairy-star-catcher).
+Ride a rainbow board along an endless glass sky track that climbs, dips and swoops through space. Dodge moon rocks, toadstools, snowmen, crystal trees, fairy houses, storm clouds and rolling planets, and catch stars to build your combo. The 3D follow-up to [Fairy Star Catcher](https://github.com/0xRedDevil/fairy-star-catcher).
 
 Play it at https://0xreddevil.github.io/star-catcher-3d/
 
 - ⭐ Star: 10 points × combo
+- 💖 Heart: 25 points × combo, plus a life (up to 5)
+- ✨ Near miss: swerve close past an obstacle for 5 points × combo
 - 🌈 Distance: 1 point for every 4 units of track
-- 🔥 Combo: every 3 catches in a row adds +1 to the multiplier, up to x5
+- 🔥 Combo: every 3 catches in a row adds +1 to the multiplier, up to x5. A bump resets it.
+- ❤️ Lives: you start with 3. A bump costs one, then you blink and are safe for a moment. The ride ends at 0.
 - 🪄 The glowing walls keep you on the track, so you can't fall off
 
-The track is generated as you ride, so every ride is different. Top 5 scores are saved in the browser (localStorage).
+There's always a clear way through each row of obstacles. The track is generated as you ride, so every ride is different. Top 5 scores are saved in the browser (localStorage).
+
+**Free Ride 🌌** is the same track with no obstacles, stars, score or lives, just for the ride. Press **Menu** (or Escape) to go back.
 
 ## Controls
 
-- **Keyboard:** ← → arrow keys (or A / D). Escape ends the ride.
+- **Keyboard:** ← → arrow keys (or A / D)
 - **Mouse or touch:** drag left and right
 
 ## Run it locally
