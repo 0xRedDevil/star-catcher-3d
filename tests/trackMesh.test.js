@@ -2,7 +2,21 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createTrack, TRACK_HALF_WIDTH } from '../js/track.js';
-import { buildChunk, createTrackView, CHUNK_LENGTH, WALL_HEIGHT } from '../js/trackMesh.js';
+import { buildChunk, createTrackView, CHUNK_LENGTH, WALL_HEIGHT, PURPLE_STYLE, RAINBOW_STYLE } from '../js/trackMesh.js';
+
+test('purple glass road lets space show through', () => {
+    const track = createTrack({ seed: 5 });
+    const ribbon = buildChunk(track, 0, 50, PURPLE_STYLE).getObjectByName('ribbon');
+    assert.equal(ribbon.material.transparent, true);
+    assert.ok(ribbon.material.opacity < 0.8);
+    assert.equal(ribbon.material.depthWrite, false);
+});
+
+test('rainbow style still builds', () => {
+    const track = createTrack({ seed: 6 });
+    assert.ok(buildChunk(track, 0, 50, RAINBOW_STYLE).getObjectByName('ribbon'));
+    assert.equal(RAINBOW_STYLE.colors.length, 6);
+});
 
 const EPS = 1e-4; // float32 vertex buffers
 const style = { colors: ['#ff4d6d', '#ffe66d', '#38bdf8'], wallColor: 0xff77ff };

@@ -1,6 +1,7 @@
 // Shared models: glow sprites, low-poly model baking, stars, hearts, the board and the wand
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { KIND_RADIUS } from './placement.js';
 
 export const rand = (a, b) => a + Math.random() * (b - a);
 export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -199,15 +200,76 @@ export function makeStormCloud() {
     return { geo: bake(parts), radius: 0.95 };
 }
 
-export function makeSkyCloud() {
-    const parts = [];
-    const n = 3 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < n; i++) {
-        parts.push(part(lump(0.3), pick([0xd9c9ff, 0xf3d9ff, 0xc9b8f0]), {
-            x: (i - n / 2) * 1.1, y: rand(-0.3, 0.4), z: rand(-0.4, 0.4), sx: rand(0.8, 1.4)
-        }));
+// A low-poly planet with coloured bands and, sometimes, a tilted ring
+export function makeBandedPlanet({ radius, palette, ringColor = null, ringTilt = 0.4 }) {
+    const sphere = new THREE.IcosahedronGeometry(radius, 1);
+    sphere.deleteAttribute('uv');
+    const pos = sphere.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i += 3) {
+        // Colour each triangle by the band its middle sits in
+        const y = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3;
+        const band = Math.min(palette.length - 1, Math.floor(((y / radius) + 1) / 2 * palette.length));
+        c.set(palette[band]);
+        for (let k = 0; k < 3; k++) colors.set([c.r, c.g, c.b], (i + k) * 3);
+    }
+    sphere.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const parts = [sphere];
+    if (ringColor !== null) {
+        // Ring reaches out to about 1.42 × the planet's radius
+        parts.push(part(G.torus, ringColor, { sx: radius * 1.05, sy: radius * 1.05, sz: radius * 0.2, rx: Math.PI / 2, rz: ringTilt }));
     }
     return bake(parts);
+}
+
+export function makeRollingPlanet() {
+    const palette = pick([
+        [0xff8fcf, 0xffd1ec, 0xff5fa2, 0xffd1ec],
+        [0x7fd6ff, 0xd0f2ff, 0x4aa8ff, 0xd0f2ff],
+        [0xffc46b, 0xfff0c9, 0xff9f43, 0xfff0c9],
+        [0xb79bff, 0xe8deff, 0x8a5cff, 0xe8deff],
+    ]);
+    // Sphere 0.45 plus a ring reaching about 0.64 keeps it inside its placement size
+    const geo = makeBandedPlanet({ radius: 0.45, palette, ringColor: 0xfff3c4, ringTilt: rand(-0.4, 0.4) });
+    return { geo, radius: 0.64 };
+}
+
+// One random, cached variant of each obstacle kind, scaled to fit its placement size
+const MAKERS = {
+    crystalPine: makeCrystalPine,
+    toadstool: makeToadstool,
+    moonRock: makeMoonRock,
+    snowman: makeSnowman,
+    fairyHouse: makeFairyHouse,
+    stormCloud: makeStormCloud,
+    planet: makeRollingPlanet,
+};
+const variants = {};
+
+export function obstacleModel(kind) {
+    variants[kind] ??= Array.from({ length: 5 }, MAKERS[kind]);
+    const variant = pick(variants[kind]);
+    const scale = Math.min(KIND_RADIUS[kind] / variant.radius, 1.2) * rand(0.85, 1);
+    const object = new THREE.Group();
+    const model = new THREE.Group();
+    model.scale.setScalar(scale);
+    model.add(new THREE.Mesh(variant.geo, propMat));
+    if (kind === 'stormCloud') {
+        const bolt = new THREE.Mesh(boltGeo, boltMat);
+        bolt.position.set(0, -0.6, 0.2);
+        bolt.scale.setScalar(1.3);
+        model.add(bolt);
+    }
+    if (variant.windowGlow) {
+        const glow = makeGlow(0xffd27a, 1.6, 0.6);
+        glow.position.set(0, 1.0, 0.7);
+        model.add(glow);
+    }
+    object.add(model);
+    object.userData.faceRider = !!variant.faceCamera;
+    object.userData.model = model;
+    return { object, radius: variant.radius * scale };
 }
 
 // Stars, hearts and lightning bolts
