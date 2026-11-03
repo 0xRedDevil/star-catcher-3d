@@ -66,5 +66,3 @@ The track maths, riding and scoring are tested with Node's built-in test runner:
 npm install
 npm test
 ```
-
-The design and build plan live in `docs/superpowers/`.
