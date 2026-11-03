@@ -197,11 +197,25 @@
             text-align: center;
             z-index: 20;
         }
-        #end-btn {
+        #hud.free-ride .hud-pill {
+            visibility: hidden !important;
+        }
+        #menu-btn {
+            display: none;
+        }
+        #hud.free-ride #menu-btn {
+            display: block;
+        }
+        .btn-free {
+            background: linear-gradient(to bottom, #7a6bff, #3f2fb0);
+            box-shadow: 0 6px 20px rgba(120, 100, 255, 0.4);
+        }
+        #menu-btn {
             position: absolute;
-            top: 70px;
-            right: 15px;
+            top: 0;
+            right: 0;
             z-index: 6;
+            pointer-events: auto;
             background: rgba(50, 20, 80, 0.65);
             color: #fff;
             border: 1px solid rgba(255, 119, 255, 0.4);
@@ -222,22 +236,26 @@
         <div id="hud" class="hidden">
             <div class="hud-pill">✨ <span id="score-display">0</span></div>
             <div class="hud-pill combo-pill" id="combo-pill" style="visibility: hidden;">🔥 x<span id="combo-display">1</span></div>
-            <button id="end-btn" style="pointer-events: auto;">End ride ⏹</button>
+            <div class="hud-pill"><span id="lives-display">❤️❤️❤️</span></div>
+            <button id="menu-btn">Menu ⏏</button>
         </div>
 
         <!-- Start Screen -->
         <div id="start-screen" class="ui-screen">
             <h1>Star Catcher 3D</h1>
-            <p>Ride your rainbow board along the sky track! It climbs, dips and swoops through space.</p>
+            <p>Ride your rainbow board along the sky track! Dodge the rocks, toadstools, snowmen, crystal trees, fairy houses and storm clouds.</p>
             <p class="how-to">⬅️ ➡️ arrow keys, or drag left and right</p>
-            <p class="how-to">⭐ Catch stars in a row to build your 🔥 combo!</p>
+            <p class="how-to">⭐ Catch stars and swerve close past obstacles to build your 🔥 combo!</p>
 
             <div class="leaderboard-box">
                 <h3>🏆 Top 5 Riders</h3>
                 <ul id="start-lb" class="lb-list"></ul>
             </div>
 
-            <button class="btn" id="start-btn">Ride! 🌈</button>
+            <div>
+                <button class="btn" id="start-btn">Ride! 🌈</button>
+                <button class="btn btn-free" id="free-btn">Free Ride 🌌</button>
+            </div>
         </div>
 
         <!-- Game Over Screen -->
