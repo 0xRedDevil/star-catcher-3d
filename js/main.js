@@ -1,7 +1,7 @@
 // Star Catcher 3D: ride the rainbow sky track
 import * as THREE from 'three';
 import { createTrack } from './track.js';
-import { RIDER_LIMIT, MAX_DT, steer, advanceRide } from './riding.js';
+import { RIDER_LIMIT, MAX_DT, steer, advanceRide, wallBounceStep } from './riding.js';
 import { createScoring, STAR_POINTS } from './scoring.js';
 import { createTrackView } from './trackMesh.js';
 import { starGeo, starMat, glowTex, makeGlow, createBoard, createWand, rand, pick } from './models.js';
@@ -20,7 +20,6 @@ const LOOK_AHEAD = 10;          // the camera looks at the track this far ahead
 const CREST_FLOAT = 0.35;       // how high the board floats over a hilltop
 const ITEM_Y = 0.9;             // height of stars above the track
 const STAR_REACH = 0.8;         // how close sideways counts as catching a star
-const WALL_COOLDOWN = 0.4;      // seconds between wall sparkles
 const TRACK_STYLE = {
     colors: ['#ff4d6d', '#ff9f43', '#ffe66d', '#4ade80', '#38bdf8', '#a78bfa'],
     wallColor: 0xff77ff,
@@ -278,8 +277,7 @@ let ride = { s: 0, speed: 0 };
 let x = 0;
 let targetX = 0;
 let lean = 0;
-let wallBounce = 0;
-let wallCooldown = 0;
+let wall = { bounce: 0, touching: false, cooldown: 0, lean: 0 };
 let elapsed = 0;
 let time = 0;
 let scoring = createScoring();
@@ -461,11 +459,8 @@ function frame() {
     x = steered.x;
 
     // Touching the magic wall: a sparkle, a boing and a little bounce, but no harm
-    wallCooldown -= dt;
-    wallBounce = Math.max(0, wallBounce - dt);
-    if (steered.wallTouch && gameState === 'PLAYING' && wallCooldown <= 0) {
-        wallCooldown = WALL_COOLDOWN;
-        wallBounce = 0.25;
+    wall = wallBounceStep(wall, steered.wallTouch && gameState === 'PLAYING', dt);
+    if (wall.triggered) {
         playSound('boing');
         const wf = track.frameAt(ride.s + 1);
         burst(trackPoint(_p, wf, Math.sign(x) * 6, 0.5), 0xff99ff);
@@ -476,7 +471,7 @@ function frame() {
     trackPoint(rider.position, f, x, track.crestLift(ride.s) * CREST_FLOAT);
     orient(rider, f);
     lean += (clamp(-vx * 0.05, -0.4, 0.4) - lean) * Math.min(1, dt * 8);
-    leanPivot.rotation.z = lean + Math.sign(x) * wallBounce * 0.8;
+    leanPivot.rotation.z = lean + Math.sign(x) * wall.lean;
     leanPivot.position.y = Math.sin(time * 4) * 0.02;
 
     spawnStars(ride.s + 140);

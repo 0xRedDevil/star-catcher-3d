@@ -22,6 +22,26 @@ export function steer(x, targetX, dt) {
     return { x: next, wallTouch };
 }
 
+// Touching the magic wall: a little bounce only when the board first reaches it
+export const WALL_BOUNCE_TIME = 0.25;
+export const WALL_COOLDOWN = 0.4;
+export const WALL_LEAN = 0.2;     // radians at the top of the bounce
+
+export function wallBounceStep(state, wallTouch, dt) {
+    const cooldown = Math.max(0, state.cooldown - dt);
+    let bounce = Math.max(0, state.bounce - dt);
+    const triggered = wallTouch && !state.touching && cooldown <= 0;
+    if (triggered) bounce = WALL_BOUNCE_TIME;
+    return {
+        bounce,
+        touching: wallTouch,
+        cooldown: triggered ? WALL_COOLDOWN : cooldown,
+        triggered,
+        // Eases out and back in, so the board never snaps
+        lean: WALL_LEAN * Math.sin(Math.PI * bounce / WALL_BOUNCE_TIME),
+    };
+}
+
 export function advanceRide(state, base, slope, dt) {
     const step = Math.min(dt, MAX_DT);
     const speed = state.speed + (slopeSpeed(base, slope) - state.speed) * Math.min(1, step * SPEED_EASE);

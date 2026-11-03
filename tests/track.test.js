@@ -129,6 +129,18 @@ test('crestLift is high where a climb turns into a drop', () => {
     assert.equal(track.crestLift(20), 0);
 });
 
+test('crestLift changes smoothly between whole units', () => {
+    const track = createTrack({
+        seed: 13,
+        sections: [{ length: 60, yawRate: 0, slope: 0.15 }, { length: 60, yawRate: 0, slope: -0.2 }, { length: 200, yawRate: 0, slope: 0 }]
+    });
+    track.ensure(300);
+    for (let s = 40; s < 100; s += 0.1) {
+        const step = Math.abs(track.crestLift(s + 0.1) - track.crestLift(s));
+        assert.ok(step < 0.02, `crestLift jumped by ${step} at s=${s.toFixed(1)}`);
+    }
+});
+
 test('pruneBefore keeps frame count bounded over 20000 units', () => {
     const track = createTrack({ seed: 12, difficulty: () => 1 });
     for (let s = 0; s <= 20000; s += 10) {

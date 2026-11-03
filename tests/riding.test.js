@@ -1,6 +1,47 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { slopeSpeed, steer, advanceRide, RIDER_LIMIT, MAX_DT } from '../js/riding.js';
+import { slopeSpeed, steer, advanceRide, wallBounceStep, RIDER_LIMIT, MAX_DT } from '../js/riding.js';
+
+const WALL_START = { bounce: 0, touching: false, cooldown: 0 };
+
+test('wall bounce triggers once while the wall is held', () => {
+    let state = WALL_START;
+    let triggers = 0;
+    for (let i = 0; i < 300; i++) {
+        state = wallBounceStep(state, true, 1 / 60);
+        if (state.triggered) triggers++;
+    }
+    assert.equal(triggers, 1);
+});
+
+test('wall bounce triggers again after leaving the wall and coming back', () => {
+    let state = WALL_START;
+    let triggers = 0;
+    const run = (touch, frames) => {
+        for (let i = 0; i < frames; i++) {
+            state = wallBounceStep(state, touch, 1 / 60);
+            if (state.triggered) triggers++;
+        }
+    };
+    run(true, 30);
+    run(false, 60);
+    run(true, 30);
+    assert.equal(triggers, 2);
+});
+
+test('wall bounce lean eases in and out with no big jumps', () => {
+    let state = WALL_START;
+    let prev = 0;
+    let peak = 0;
+    for (let i = 0; i < 60; i++) {
+        state = wallBounceStep(state, true, 1 / 60);
+        assert.ok(Math.abs(state.lean - prev) < 0.05, `lean jumped by ${Math.abs(state.lean - prev)} at frame ${i}`);
+        peak = Math.max(peak, state.lean);
+        prev = state.lean;
+    }
+    assert.ok(peak > 0.15, `the bounce should be visible (peak ${peak})`);
+    assert.equal(state.lean, 0);
+});
 
 test('rider limit and max step', () => {
     assert.equal(RIDER_LIMIT, 5.3);

@@ -132,8 +132,7 @@ export function createTrack({ seed, difficulty = () => 0, sections = null }) {
     }
 
     function slopeAt(s) {
-        ensure(s + 1);
-        return frames[frameIndex(s)].slope;
+        return frameAt(s).slope; // interpolated, so the hilltop float glides instead of stepping
     }
 
     // 0..1: how sharply the track goes from climbing to dropping around s

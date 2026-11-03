@@ -58,10 +58,13 @@ export function createSky(scene) {
     const glitterPos = new Float32Array(GLITTER_COUNT * 3);
     const glitterGeo = new THREE.BufferGeometry();
     glitterGeo.setAttribute('position', new THREE.BufferAttribute(glitterPos, 3));
-    scene.add(new THREE.Points(glitterGeo, new THREE.PointsMaterial({
+    const glitter = new THREE.Points(glitterGeo, new THREE.PointsMaterial({
         color: 0xfff0ff, size: 0.2, map: glowTex, transparent: true,
         depthWrite: false, blending: THREE.AdditiveBlending
-    })));
+    }));
+    // Its bounds are only worked out once, at the start, so culling would hide it later
+    glitter.frustumCulled = false;
+    scene.add(glitter);
     let seeded = false;
 
     function respawn(i, center) {
