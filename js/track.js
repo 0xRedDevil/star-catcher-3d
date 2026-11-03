@@ -12,6 +12,8 @@ const YAW_STEP = 0.004;             // most the turn rate may change per unit
 const SLOPE_STEP = 0.02;            // most the slope may change per unit
 const TURN_LEVELS = [0, 0, 0.4, 0.7, 1.0];
 const HOME_BAND = 20;               // beyond this height the track heads back towards 0
+const TURN_WINDOW = 100;            // units of heading history checked for curling back
+const TURN_WINDOW_LIMIT = 0.9;      // most net turn (radians) allowed within that window
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -30,6 +32,19 @@ export function createTrack({ seed, difficulty = () => 0, sections = null }) {
     let targetYawRate = 0;
     let targetSlope = 0;
     let sectionLeft = 0;
+    const yawHistory = [];  // recent headings, so the track never curls back into view
+
+    function recentTurn() {
+        // The biggest swing in heading within the window, with the direction of the swing,
+        // so an S-bend that swings hard one way then the other still counts
+        let lo = yaw;
+        let hi = yaw;
+        for (const past of yawHistory) {
+            lo = Math.min(lo, past);
+            hi = Math.max(hi, past);
+        }
+        return yaw - lo > hi - yaw ? yaw - lo : yaw - hi;
+    }
 
     function pickSection() {
         if (script.length) {
@@ -43,6 +58,11 @@ export function createTrack({ seed, difficulty = () => 0, sections = null }) {
         const level = TURN_LEVELS[Math.floor(rng() * TURN_LEVELS.length)];
         const side = rng() < 0.5 ? -1 : 1;
         targetYawRate = side * level * MAX_YAW_RATE * (0.5 + 0.5 * clamp(difficulty(), 0, 1));
+        // After a lot of turning one way, go straight or turn back the other way
+        const turned = recentTurn();
+        if (Math.abs(turned) > TURN_WINDOW_LIMIT / 2 && Math.sign(targetYawRate) === Math.sign(turned)) {
+            targetYawRate = -targetYawRate * 0.5;
+        }
 
         targetSlope = MIN_SLOPE + rng() * (MAX_SLOPE - MIN_SLOPE);
         targetSlope -= clamp(y / 200, -0.1, 0.1);
@@ -94,6 +114,14 @@ export function createTrack({ seed, difficulty = () => 0, sections = null }) {
         x = prev.x + prev.fx;
         y = prev.y + prev.fy;
         z = prev.z + prev.fz;
+
+        yawHistory.push(yaw);
+        if (yawHistory.length > TURN_WINDOW) yawHistory.shift();
+        // A bend that has turned too far ends early, so the next section can unwind it
+        const turned = recentTurn();
+        if (!script.length && Math.abs(turned) > TURN_WINDOW_LIMIT && Math.sign(targetYawRate) === Math.sign(turned)) {
+            sectionLeft = 0;
+        }
 
         if (sectionLeft <= 0) pickSection();
         sectionLeft--;

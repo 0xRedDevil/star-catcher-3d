@@ -129,6 +129,19 @@ test('crestLift is high where a climb turns into a drop', () => {
     assert.equal(track.crestLift(20), 0);
 });
 
+test('track never curls back within 150 units', () => {
+    for (const seed of [21, 22, 23]) {
+        const track = createTrack({ seed, difficulty: () => 1 });
+        track.ensure(20200);
+        for (let s = 0; s <= 20000; s += 5) {
+            const a = track.frameAt(s);
+            const b = track.frameAt(s + 150);
+            const d = len(b.x - a.x, b.y - a.y, b.z - a.z);
+            assert.ok(d >= 120, `seed ${seed}: only ${d.toFixed(1)} units apart from s=${s} to s=${s + 150}`);
+        }
+    }
+});
+
 test('crestLift changes smoothly between whole units', () => {
     const track = createTrack({
         seed: 13,
