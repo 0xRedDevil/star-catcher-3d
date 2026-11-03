@@ -324,6 +324,7 @@ let gameState = 'START'; // START, PLAYING, GAMEOVER
 let freeRide = false;
 let modeId = store.lastMode();
 let lbTab = modeId;
+let selectedMode = modeId;   // what's picked on the start screen: easy, hard or free
 let track = null;
 let trackView = null;
 let placer = null;
@@ -447,8 +448,15 @@ function showScreen(id) {
 }
 
 // Start screen: mode buttons, board picker and the top 5 tabs
+const RIDE_NAMES = { easy: 'Easy', hard: 'Hard', free: 'Free Ride' };
+
 function renderStart() {
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('last', btn.dataset.mode === modeId));
+    document.querySelectorAll('.mode-option').forEach(option => {
+        const input = option.querySelector('input');
+        input.checked = input.value === selectedMode;
+        option.classList.toggle('selected', input.checked);
+    });
+    $('start-label').innerText = selectedMode === 'free' ? 'Start Free Ride' : `Start ${RIDE_NAMES[selectedMode]}`;
     document.querySelectorAll('.lb-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === lbTab));
     renderLeaderboard('start-lb', lbTab);
 
@@ -520,6 +528,21 @@ function goToMenu() {
     renderStart();
     showScreen('start-screen');
 }
+
+// The top 5s live in their own panel, out of the way of the start screen
+function openScores() {
+    lbTab = selectedMode === 'hard' ? 'hard' : 'easy';
+    renderStart();
+    $('scores-panel').classList.remove('hidden');
+    $('scores-close').focus();
+}
+
+function closeScores() {
+    $('scores-panel').classList.add('hidden');
+    $('scores-btn').focus();
+}
+
+const scoresOpen = () => !$('scores-panel').classList.contains('hidden');
 
 function triggerGameOver() {
     gameState = 'GAMEOVER';
@@ -626,7 +649,14 @@ window.addEventListener('keydown', (e) => {
     if (e.target && e.target.tagName === 'INPUT') return; // typing a name
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
-    if (e.key === 'Escape') goToMenu();
+    if (e.key === 'Escape') {
+        if (scoresOpen()) closeScores();
+        else goToMenu();
+    }
+    // Enter starts the picked ride from the start screen
+    if (e.key === 'Enter' && gameState === 'START' && !scoresOpen() && !(e.target && e.target.tagName === 'BUTTON')) {
+        startGame(selectedMode);
+    }
     if (e.key.startsWith('Arrow')) e.preventDefault();
 });
 window.addEventListener('keyup', (e) => {
@@ -748,12 +778,18 @@ function frame() {
 }
 
 // UI buttons
-document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.mode)));
+document.querySelectorAll('.mode-option input').forEach(input => input.addEventListener('change', () => {
+    selectedMode = input.value;
+    renderStart();
+}));
+$('start-btn').addEventListener('click', () => startGame(selectedMode));
+$('scores-btn').addEventListener('click', openScores);
+$('scores-close').addEventListener('click', closeScores);
+$('scores-panel').addEventListener('click', (e) => { if (e.target === $('scores-panel')) closeScores(); });
 document.querySelectorAll('.lb-tab').forEach(btn => btn.addEventListener('click', () => {
     lbTab = btn.dataset.tab;
     renderStart();
 }));
-$('free-btn').addEventListener('click', () => startGame('free'));
 $('restart-btn').addEventListener('click', () => startGame(modeId));
 $('gameover-menu-btn').addEventListener('click', goToMenu);
 $('menu-btn').addEventListener('click', goToMenu);

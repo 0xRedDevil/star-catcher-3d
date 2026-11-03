@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Star Catcher 3D 🧚✨</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -404,6 +407,311 @@
             opacity: 1;
             transform: translate(-50%, 0);
         }
+
+        /* ---------- Start screen ---------- */
+        :root {
+            --display: 'Baloo 2', 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            --gold: #ffd34d;
+            --pink: #ff7ad9;
+            --card: rgba(40, 15, 70, 0.7);
+            --card-border: rgba(255, 255, 255, 0.14);
+        }
+        .start {
+            gap: 6px;
+            padding: 64px 16px 24px;
+        }
+        .start > * {
+            animation: rise 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        .start > :nth-child(2) { animation-delay: 0.05s; }
+        .start > :nth-child(3) { animation-delay: 0.12s; }
+        .start > :nth-child(4), .start > :nth-child(5) { animation-delay: 0.18s; }
+        .start > :nth-child(6), .start > :nth-child(7) { animation-delay: 0.24s; }
+        .start > :nth-child(8) { animation-delay: 0.3s; }
+        .start > :nth-child(9) { animation-delay: 0.36s; }
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to { opacity: 1; transform: none; }
+        }
+
+        /* The logo: two chunky gradient words, a rainbow 3D badge and a twinkling star */
+        .logo {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            line-height: 0.82;
+            font-family: var(--display);
+            font-weight: 800;
+            text-shadow: none;
+        }
+        .logo-word {
+            display: block;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1px;
+        }
+        .logo-top {
+            font-size: clamp(3.4rem, 17vw, 5.6rem);
+            background-image: linear-gradient(180deg, #fffbe0 0%, #ffe066 40%, #ffa63d 100%);
+            filter: drop-shadow(0 3px 0 #c2448f) drop-shadow(0 4px 0 #6b2a8f) drop-shadow(0 0 22px rgba(255, 200, 80, 0.55));
+        }
+        .logo-bottom {
+            margin-top: -0.08em;
+            font-size: clamp(2.6rem, 13vw, 4.4rem);
+            background-image: linear-gradient(180deg, #fff0ff 0%, #ff8fe0 45%, #b44dff 100%);
+            filter: drop-shadow(0 3px 0 #5a2a9a) drop-shadow(0 4px 0 #2e1660) drop-shadow(0 0 22px rgba(255, 120, 220, 0.5));
+        }
+        .logo-badge {
+            position: absolute;
+            right: -0.45em;
+            top: 0.1em;
+            padding: 0 0.35em;
+            font-size: clamp(1.2rem, 5vw, 1.7rem);
+            line-height: 1.25;
+            color: #2a0a40;
+            background: linear-gradient(90deg, #ff4d6d, #ff9f43, #ffe66d, #4ade80, #38bdf8, #a78bfa);
+            border: 3px solid #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 0 #2e1660, 0 0 16px rgba(255, 255, 255, 0.45);
+            transform: rotate(-12deg);
+            animation: badge-wobble 3s ease-in-out infinite;
+        }
+        .logo-star {
+            position: absolute;
+            left: -0.55em;
+            top: -0.25em;
+            width: clamp(36px, 10vw, 56px);
+            fill: #ffe066;
+            filter: drop-shadow(0 0 10px #ffd34d);
+            animation: twinkle 2.4s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { transform: rotate(-12deg) scale(1); opacity: 1; }
+            50% { transform: rotate(12deg) scale(0.82); opacity: 0.75; }
+        }
+        @keyframes badge-wobble {
+            0%, 100% { transform: rotate(-12deg); }
+            50% { transform: rotate(-6deg) translateY(-3px); }
+        }
+        .tagline {
+            margin: 8px 0 10px;
+            font-family: var(--display);
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ffe9ff;
+        }
+        .section-label {
+            margin-top: 8px;
+            font-family: var(--display);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #d9c4ff;
+        }
+
+        /* Choose your ride */
+        .mode-picker {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 460px;
+        }
+        .mode-option {
+            --accent: #ff7ad9;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-height: 104px;
+            padding: 12px 6px 10px;
+            border: 2px solid var(--card-border);
+            border-radius: 18px;
+            background: var(--card);
+            cursor: pointer;
+            transition: transform 0.18s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .mode-hard { --accent: #ff9a4d; }
+        .mode-free { --accent: #7fd6ff; }
+        .mode-option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .mode-icon {
+            width: 34px;
+            height: 34px;
+            fill: var(--accent);
+            color: var(--accent);
+            filter: drop-shadow(0 0 6px var(--accent));
+        }
+        .mode-name {
+            font-family: var(--display);
+            font-size: 1.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: #fff;
+        }
+        .mode-hint {
+            font-size: 0.78rem;
+            color: #e2d8ff;
+        }
+        .mode-option:hover {
+            transform: translateY(-2px);
+        }
+        .mode-option.selected {
+            border-color: var(--accent);
+            background: rgba(85, 35, 130, 0.85);
+            box-shadow: 0 0 0 2px var(--accent), 0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent);
+            transform: translateY(-3px);
+        }
+        .mode-option:focus-within {
+            outline: 3px solid #fff;
+            outline-offset: 3px;
+        }
+
+        /* The big start button */
+        .start-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: min(100%, 340px);
+            min-height: 62px;
+            margin-top: 16px;
+            padding: 0 28px;
+            font-family: var(--display);
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #3a1300;
+            background: linear-gradient(180deg, #fff3a8 0%, #ffd34d 50%, #ffae1f 100%);
+            border: none;
+            border-radius: 999px;
+            box-shadow: 0 6px 0 #c2650a, 0 10px 30px rgba(255, 200, 60, 0.45);
+            cursor: pointer;
+            animation: rise 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both, glow 2.2s ease-in-out 1s infinite;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .start-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: currentColor;
+        }
+        .start-btn:hover {
+            transform: translateY(-2px);
+        }
+        .start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #c2650a, 0 6px 18px rgba(255, 200, 60, 0.4);
+        }
+        .start-btn:focus-visible, .scores-btn:focus-visible, .board-card:focus-visible, .lb-tab:focus-visible, .close-btn:focus-visible {
+            outline: 3px solid #fff;
+            outline-offset: 3px;
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 6px 0 #c2650a, 0 10px 30px rgba(255, 200, 60, 0.45); }
+            50% { box-shadow: 0 6px 0 #c2650a, 0 10px 44px rgba(255, 220, 90, 0.85); }
+        }
+        .start .how-to {
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        /* Scores live behind their own button */
+        .scores-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 0 16px;
+            font-family: var(--display);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--card);
+            border: 2px solid rgba(255, 211, 77, 0.6);
+            border-radius: 999px;
+            cursor: pointer;
+            animation: none;
+        }
+        .scores-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--gold);
+        }
+        #scores-panel {
+            z-index: 12;
+            background: rgba(10, 4, 24, 0.7);
+        }
+        .panel {
+            position: relative;
+            width: min(100%, 360px);
+            padding: 22px 20px 18px;
+            border: 2px solid rgba(255, 211, 77, 0.5);
+            border-radius: 22px;
+            background: rgba(40, 15, 70, 0.95);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: rise 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        .panel h2 {
+            margin: 0 0 12px;
+            font-family: var(--display);
+            font-size: 1.7rem;
+            color: var(--gold);
+            text-shadow: 0 0 12px rgba(255, 211, 77, 0.5);
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .close-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: #fff;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+        }
+        .board-card {
+            min-height: 44px;
+        }
+
+        @media (max-width: 400px) {
+            .mode-option {
+                min-height: 96px;
+                padding: 10px 4px 8px;
+            }
+            .mode-name {
+                font-size: 1.05rem;
+            }
+            .mode-hint {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Calmer for people who prefer less motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -423,24 +731,62 @@
         <div id="banner"><div id="banner-title"></div><div id="banner-subtitle"></div></div>
 
         <!-- Start Screen -->
-        <div id="start-screen" class="ui-screen">
-            <h1>Star Catcher 3D</h1>
-            <p>Ride your board along the sky track! Dodge the UFOs, aliens, rockets, satellites, space crystals and moon rocks.</p>
-            <p class="how-to">⬅️ ➡️ arrow keys, or drag left and right</p>
-            <p class="how-to">⭐ Catch stars and swerve close past obstacles to build your 🔥 combo!</p>
+        <div id="start-screen" class="ui-screen start">
+            <button class="scores-btn" id="scores-btn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 15.9V18h3v3H8v-3h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zM6 7v1a2 2 0 0 0 2 2V7H6zm12 0h-2v3a2 2 0 0 0 2-2V7z"/></svg>
+                Scores
+            </button>
 
-            <div class="mode-row">
-                <button class="btn mode-btn" data-mode="easy">Easy 🌈</button>
-                <button class="btn mode-btn btn-hard" data-mode="hard">Hard 🔥</button>
-                <button class="btn btn-free" id="free-btn">Free Ride 🌌</button>
+            <h1 class="logo" aria-label="Star Catcher 3D">
+                <svg class="logo-star" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 62 36 96 38 69 59 79 93 50 73 21 93 31 59 4 38 38 36Z"/></svg>
+                <span class="logo-word logo-top" aria-hidden="true">Star</span>
+                <span class="logo-word logo-bottom" aria-hidden="true">Catcher</span>
+                <span class="logo-badge" aria-hidden="true">3D</span>
+            </h1>
+            <p class="tagline">A magic ride through space!</p>
+
+            <div class="section-label" id="mode-label">Choose your ride</div>
+            <div class="mode-picker" role="radiogroup" aria-labelledby="mode-label">
+                <label class="mode-option mode-easy">
+                    <input type="radio" name="mode" value="easy">
+                    <svg class="mode-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.5-9.6-8.8C.7 9.1 2.4 5 6.2 5c2.2 0 3.3 1.2 5.8 3.6C14.5 6.2 15.6 5 17.8 5c3.8 0 5.5 4.1 3.8 7.2C19.2 16.5 12 21 12 21z"/></svg>
+                    <span class="mode-name">Easy</span>
+                    <span class="mode-hint">3 lives + hearts</span>
+                </label>
+                <label class="mode-option mode-hard">
+                    <input type="radio" name="mode" value="hard">
+                    <svg class="mode-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c.6 3.4 4.8 5.6 4.8 10.6A4.8 4.8 0 0 1 12 17.5a4.8 4.8 0 0 1-4.8-4.9c0-2.4 1.3-3.8 2.4-5 .1 1.8 1.1 3 2.4 3 .9-2.6.2-5.6 0-8.6zM12 22a7 7 0 0 1-7-7c0-1.4.4-2.6 1-3.6.2 3.9 2.8 7.6 6 7.6s5.8-3.7 6-7.6c.6 1 1 2.2 1 3.6a7 7 0 0 1-7 7z"/></svg>
+                    <span class="mode-name">Hard</span>
+                    <span class="mode-hint">Faster, no hearts</span>
+                </label>
+                <label class="mode-option mode-free">
+                    <input type="radio" name="mode" value="free">
+                    <svg class="mode-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5.5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.4" fill="none" stroke="currentColor" stroke-width="1.8" transform="rotate(-20 12 12)"/></svg>
+                    <span class="mode-name">Free Ride</span>
+                    <span class="mode-hint">Just cruise</span>
+                </label>
             </div>
 
+            <div class="section-label">Choose your board</div>
             <div class="board-picker" id="board-picker"></div>
 
-            <div class="leaderboard-box">
+            <button class="start-btn" id="start-btn" type="button">
+                <span id="start-label">Start</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <p class="how-to">Steer with ← → or drag. Catch stars and swerve close for combos!</p>
+        </div>
+
+        <!-- Scores panel -->
+        <div id="scores-panel" class="ui-screen hidden" role="dialog" aria-modal="true" aria-labelledby="scores-title">
+            <div class="panel">
+                <button class="close-btn" id="scores-close" type="button" aria-label="Close scores">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
+                <h2 id="scores-title">Top Riders</h2>
                 <div class="lb-tabs">
-                    <button class="lb-tab" data-tab="easy">🏆 Easy</button>
-                    <button class="lb-tab" data-tab="hard">🏆 Hard</button>
+                    <button class="lb-tab" data-tab="easy" type="button">Easy</button>
+                    <button class="lb-tab" data-tab="hard" type="button">Hard</button>
                 </div>
                 <ul id="start-lb" class="lb-list"></ul>
             </div>
