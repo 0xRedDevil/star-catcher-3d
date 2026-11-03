@@ -388,7 +388,7 @@ function spawn(p) {
         const model = obstacleModel(p.kind);
         obj = model.object;
         radius = model.radius * HITBOX;
-        height = p.kind === 'stormCloud' ? CLOUD_Y : p.kind === 'planet' ? PLANET_Y : 0;
+        height = p.kind === 'floater' ? CLOUD_Y : p.kind === 'planet' ? PLANET_Y : 0;
         if (!obj.userData.faceRider && p.kind !== 'planet') obj.userData.model.rotation.y = rand(0, Math.PI * 2);
     }
     scene.add(obj);
@@ -588,7 +588,7 @@ function updateItems(dt, prevS) {
         // Rolling planets and storm clouds move back and forth across their own stretch
         if (p.range) it.x = planetX(p.range, elapsed + it.phase, p.kind === 'planet' ? 2 : CLOUD_SPEED);
         const f = track.frameAt(p.s);
-        const bob = p.kind === 'stormCloud' ? Math.sin(time * 2 + it.phase) * 0.12 : 0;
+        const bob = p.kind === 'floater' ? Math.sin(time * 2 + it.phase) * 0.12 : 0;
         trackPoint(it.obj.position, f, it.x, it.height + bob);
         orient(it.obj, f);
         if (p.type === 'star' || p.type === 'heart') {

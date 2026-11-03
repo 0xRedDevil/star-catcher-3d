@@ -237,12 +237,12 @@ export function makeRollingPlanet() {
 
 // One random, cached variant of each obstacle kind, scaled to fit its placement size
 const MAKERS = {
-    crystalPine: makeCrystalPine,
-    toadstool: makeToadstool,
-    moonRock: makeMoonRock,
-    snowman: makeSnowman,
-    fairyHouse: makeFairyHouse,
-    stormCloud: makeStormCloud,
+    tall: makeCrystalPine,
+    cluster: makeToadstool,
+    rock: makeMoonRock,
+    buddy: makeSnowman,
+    station: makeFairyHouse,
+    floater: makeStormCloud,
     planet: makeRollingPlanet,
 };
 const variants = {};
@@ -255,7 +255,7 @@ export function obstacleModel(kind) {
     const model = new THREE.Group();
     model.scale.setScalar(scale);
     model.add(new THREE.Mesh(variant.geo, propMat));
-    if (kind === 'stormCloud') {
+    if (kind === 'floater') {
         const bolt = new THREE.Mesh(boltGeo, boltMat);
         bolt.position.set(0, -0.6, 0.2);
         bolt.scale.setScalar(1.3);

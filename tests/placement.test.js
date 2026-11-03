@@ -19,7 +19,7 @@ const obstacles = (all) => all.filter(p => p.type === 'obstacle');
 const rowCount = (all) => Math.max(...all.map(p => p.row)) + 1;
 
 test('kinds and radii', () => {
-    assert.deepEqual(OBSTACLE_KINDS, ['crystalPine', 'toadstool', 'moonRock', 'snowman', 'fairyHouse', 'stormCloud']);
+    assert.deepEqual(OBSTACLE_KINDS, ['tall', 'cluster', 'rock', 'buddy', 'station', 'floater']);
     for (const kind of [...OBSTACLE_KINDS, 'planet']) assert.ok(KIND_RADIUS[kind] > 0, kind);
 });
 
@@ -123,7 +123,7 @@ test('planets stay on one side of the safe lane', () => {
 
 test('storm clouds drift on their own side of the safe lane', () => {
     for (const seed of [17, 18]) {
-        const clouds = ride(seed).all.filter(p => p.kind === 'stormCloud');
+        const clouds = ride(seed).all.filter(p => p.kind === 'floater');
         assert.ok(clouds.length > 20, 'storm clouds should appear');
         for (const p of clouds) {
             const clear = p.radius + 1.3;

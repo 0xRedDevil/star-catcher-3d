@@ -6,16 +6,16 @@ import { TRACK_HALF_WIDTH } from './track.js';
 
 // The largest each model may be, for spacing and hits
 export const KIND_RADIUS = {
-    moonRock: 1.0,
-    toadstool: 0.9,
-    snowman: 0.6,
-    crystalPine: 0.85,
-    fairyHouse: 0.85,
-    stormCloud: 0.95,
+    rock: 1.0,
+    cluster: 0.9,
+    buddy: 0.6,
+    tall: 0.85,
+    station: 0.85,
+    floater: 0.95,
     planet: 0.7,
 };
 export const PLACE_AHEAD = 150;   // things are placed this far ahead of the rider, deep in the fog
-export const OBSTACLE_KINDS =['crystalPine', 'toadstool', 'moonRock', 'snowman', 'fairyHouse', 'stormCloud'];
+export const OBSTACLE_KINDS = ['tall', 'cluster', 'rock', 'buddy', 'station', 'floater'];
 
 export const EASY = {
     hearts: true,
@@ -110,8 +110,8 @@ export function createPlacer({ seed, track, mode = EASY }) {
                     if (Math.abs(x - safeX) < radius + SAFE_CLEAR) continue;
                     if (placed.some(p => gapTo(p, x) < p.radius + radius + SPACING)) continue;
                     const obstacle = { type: 'obstacle', kind, s, x, radius, ...tag };
-                    if (kind === 'stormCloud') {
-                        // Storm clouds drift side to side, but only on their own side of the safe lane,
+                    if (kind === 'floater') {
+                        // Floaters (storm clouds, UFOs) drift side to side, but only on their own side of the safe lane,
                         // and never into anything else in their row
                         let lo = x < safeX ? -(EDGE - radius) : safeX + radius + SAFE_CLEAR;
                         let hi = x < safeX ? safeX - radius - SAFE_CLEAR : EDGE - radius;
