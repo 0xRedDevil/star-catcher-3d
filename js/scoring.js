@@ -2,6 +2,7 @@
 export const DISTANCE_PER_POINT = 4;
 export const STAR_POINTS = 10;
 export const HEART_POINTS = 25;
+export const NEAR_MISS_POINTS = 5;
 export const COMBO_STEP = 3;      // catches in a row needed for each +1 to the multiplier
 export const MAX_MULTIPLIER = 5;
 

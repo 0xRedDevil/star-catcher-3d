@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createScoring } from '../js/scoring.js';
+import { createScoring, NEAR_MISS_POINTS } from '../js/scoring.js';
+
+test('near miss counts as a catch worth 5 times the combo', () => {
+    assert.equal(NEAR_MISS_POINTS, 5);
+    const scoring = createScoring();
+    scoring.addCatch(NEAR_MISS_POINTS);
+    assert.equal(scoring.score, 5);
+    assert.equal(scoring.combo, 1);
+});
 
 test('1 point per 4 units of distance', () => {
     const scoring = createScoring();
