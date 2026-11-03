@@ -61,6 +61,13 @@ Collecting is a seasoning, not the main course. The owner explicitly asked for f
 - Score-based board unlocks: plain starter board; new board at **2,000**; a nicer one at **5,000**; a super flashy rainbow board with glitter sparkles at **10,000**.
 - Combo multiplier scoring with a small score for progress, giving the "high scoring" feel.
 
+### Decided by the owner after playing stage 1
+
+- **Track surface:** a see-through, glowing purple road (like the first 3D version's path), so space and stars show through it. The rainbow road is kept as a look for special rounds or zones only (stage 3).
+- **Sky:** no fluffy clouds in the sky. Instead there are planets (some ringed), stars and other space things: coloured nebula glows, comets and shooting stars. Storm clouds stay as an obstacle on the track.
+- **Obstacles must be able to end the ride.** Sitting still without steering must not be a way to survive.
+- **Free Ride mode:** ride the track just to enjoy it: no obstacles, no stars or hearts, no score, no lives and no game over. It's started from its own button on the start screen, and a Menu button (or Escape) returns to the start screen. Nothing is saved to any leaderboard.
+
 ## Design (proposed by Claude, agreed in conversation)
 
 ### The track
@@ -77,6 +84,7 @@ The track is a ribbon generated a little at a time ahead of the rider and discar
 - **Width:** about 12 units, with the rider allowed about ±5.3 from the centre.
 - **Mesh:** built in chunks (for example 40 to 60 units each) from the frames, with UVs running along the length so the surface texture can scroll and stripe. Keep about 150 units ahead and about 20 behind; dispose old chunks.
 - **Walls:** low (about 0.8 units), translucent, glowing barriers along both edges, built from the same frames. Stars and space must be clearly visible through them.
+- **No pop-in (added after the stage 1 review):** the track must not curl back on itself so tightly that new track gets built in clear view. Over any 150 units of track, the straight-line distance from start to end stays at least 120 units, so new pieces always appear deep in the fog.
 - **Position precision:** long runs reach tens of thousands of units. If jitter appears, the builder may re-centre the world origin periodically.
 
 ### Riding and "physics for feel"
