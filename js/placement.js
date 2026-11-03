@@ -28,6 +28,17 @@ export const EASY = {
     planetsAfter: 30,   // seconds before rolling planets appear
     planetChance: 0.2,
 };
+export const HARD = {
+    hearts: false,
+    startGap: 8,
+    minGap: 5,
+    gapShrink: 0.04,
+    startCount: 3,
+    maxCount: 6,
+    countEvery: 12,
+    planetsAfter: 20,
+    planetChance: 0.25,
+};
 export const FREE_RIDE = { free: true };
 
 const FIRST_ROW = 40;
